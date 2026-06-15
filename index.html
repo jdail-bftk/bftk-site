@@ -1,0 +1,2763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bound for the Kingdom</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&family=Caveat:wght@400;600&display=swap" rel="stylesheet" />
+  <script type="importmap">
+    { "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    } }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #2B4DD4;
+      --blue-light: #4B6EF5;
+      --blue-glow: rgba(43,77,212,0.4);
+      --purple: #8B2FC9;
+      --purple-light: #A855F7;
+      --purple-glow: rgba(139,47,201,0.4);
+      --teal: #0ABCBC;
+      --brand-grad: linear-gradient(135deg, #2B4DD4 0%, #8B2FC9 100%);
+
+      --cream: #F5EDD8;
+      --cream2: #EDE2C4;
+      --cream3: #E3D5AF;
+      --tan: #C8B886;
+
+      --dark: #12112A;
+      --dark2: #0E0D20;
+      --text: #2C2A4A;
+      --text-mid: #5A5878;
+      --text-muted: #8A88A8;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--text); overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--cream2); }
+    ::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 3px; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      height: 68px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 5vw;
+      background: rgba(245,237,216,0.93);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(43,77,212,0.1);
+      transition: box-shadow 0.3s;
+    }
+    nav.scrolled { box-shadow: 0 4px 30px rgba(28,27,56,0.1); }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo img { width: 38px; height: 38px; object-fit: contain; }
+    .nav-logo-text {
+      font-family: 'Cinzel', serif; font-size: 0.82rem; font-weight: 700;
+      letter-spacing: 0.05em; line-height: 1.2;
+      background: var(--brand-grad);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--text-mid); text-decoration: none;
+      transition: color 0.2s; position: relative;
+    }
+    .nav-links a::after {
+      content: ''; position: absolute; bottom: -3px; left: 0; right: 0;
+      height: 1.5px; background: var(--brand-grad);
+      transform: scaleX(0); transition: transform 0.25s;
+    }
+    .nav-links a:hover { color: var(--blue); }
+    .nav-links a:hover::after { transform: scaleX(1); }
+    .nav-cta {
+      background: var(--brand-grad); color: #fff;
+      font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 0.55rem 1.3rem; text-decoration: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .nav-cta:hover { opacity: 0.85; transform: translateY(-1px); }
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      cursor: pointer; background: none; border: none; padding: 4px;
+    }
+    .hamburger span { display: block; width: 24px; height: 2px; background: var(--blue); }
+
+    /* ── MOBILE NAV ── */
+    .mobile-nav {
+      position: fixed; top: 0; right: 0;
+      width: min(290px, 85vw); height: 100vh;
+      background: var(--cream); border-left: 2px solid rgba(43,77,212,0.12);
+      z-index: 300; transform: translateX(100%); transition: transform 0.3s;
+      padding: 5rem 2rem 2rem;
+      display: flex; flex-direction: column; gap: 1.4rem;
+    }
+    .mobile-nav.open { transform: translateX(0); }
+    .mobile-close { position: absolute; top: 1.2rem; right: 1.2rem; background: none; border: none; font-size: 1.4rem; color: var(--text-mid); cursor: pointer; }
+    .mobile-nav a { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 600; color: var(--text); text-decoration: none; padding-bottom: 1rem; border-bottom: 1px solid rgba(43,77,212,0.1); }
+    .mobile-nav a:hover { color: var(--blue); }
+    .nav-backdrop { display: none; position: fixed; inset: 0; background: rgba(18,17,42,0.4); z-index: 250; }
+    .nav-backdrop.open { display: block; }
+
+    /* ── 3D HERO SECTION ── */
+    #scene-hero {
+      position: relative; width: 100%; height: 100vh; overflow: hidden;
+    }
+    #bftk-3d {
+      position: absolute; inset: 0; display: block; width: 100%; height: 100%;
+    }
+    #scene-scroll-hint {
+      position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      z-index: 2; pointer-events: none;
+    }
+    #scene-scroll-hint span { font-size: 0.52rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(245,237,216,0.35); }
+    #scene-scroll-hint .scroll-line { width: 1px; height: 44px; background: linear-gradient(to bottom, rgba(75,110,245,0.7), transparent); animation: pulse 2s infinite; }
+    /* Fade 3D section into the hero below */
+    #scene-hero::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 28vh; pointer-events: none; z-index: 1;
+      background: linear-gradient(to bottom, transparent, #080714);
+    }
+
+    /* ── HERO ── */
+    #hero {
+      background: #080714;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      text-align: center; position: relative; overflow: hidden;
+      cursor: none;
+    }
+    #glitter-canvas {
+      position: absolute; inset: 0; z-index: 1;
+      pointer-events: none;
+    }
+    .custom-cursor {
+      position: fixed; z-index: 9999; pointer-events: none;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(139,47,201,0.6) 60%, transparent 100%);
+      transform: translate(-50%, -50%);
+      transition: width 0.15s, height 0.15s, opacity 0.15s;
+      mix-blend-mode: screen;
+    }
+    .custom-cursor.clicking {
+      width: 32px; height: 32px;
+      background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(43,77,212,0.8) 50%, transparent 100%);
+    }
+    #hero .hero-content { cursor: default; }
+    .hero-bg {
+      position: absolute; inset: 0;
+      overflow: hidden;
+    }
+    .hero-bg video {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
+      display: block;
+    }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom,
+        #080714 0%,
+        rgba(8,7,20,0.85) 18%,
+        rgba(14,13,32,0.72) 50%,
+        rgba(14,13,32,0.9) 100%);
+    }
+    .hero-content { position: relative; z-index: 2; max-width: 860px; padding: 0 2rem; }
+    .hero-logo-wrap { margin-bottom: 2rem; opacity: 0; animation: fade-up 0.8s 0.2s forwards; }
+    .hero-logo-wrap img {
+      width: 90px;
+      filter: drop-shadow(0 0 24px var(--purple-glow)) drop-shadow(0 0 50px var(--blue-glow));
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 12px;
+      font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 600;
+      letter-spacing: 0.35em; color: rgba(245,237,216,0.6); text-transform: uppercase;
+      margin-bottom: 1.5rem; opacity: 0; animation: fade-up 0.8s 0.4s forwards;
+    }
+    .hero-eyebrow::before, .hero-eyebrow::after { content: ''; display: block; width: 28px; height: 1px; background: rgba(245,237,216,0.3); }
+    .hero-title {
+      font-family: 'Cinzel', serif; font-size: clamp(2.8rem, 8vw, 6rem); font-weight: 900;
+      line-height: 1.05; color: var(--cream);
+      opacity: 0; animation: fade-up 1s 0.5s forwards;
+    }
+    .hero-title .grad {
+      background: var(--brand-grad);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-sub {
+      font-family: 'Lora', serif; font-style: italic;
+      font-size: clamp(1rem, 2.5vw, 1.4rem); color: rgba(245,237,216,0.65);
+      margin: 0.6rem 0 2.5rem;
+      opacity: 0; animation: fade-up 0.8s 0.7s forwards;
+    }
+    .hero-desc {
+      font-size: 0.92rem; color: rgba(245,237,216,0.55); line-height: 1.85;
+      max-width: 500px; margin: 0 auto 3rem;
+      opacity: 0; animation: fade-up 0.8s 0.85s forwards;
+    }
+    .hero-btns {
+      display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+      opacity: 0; animation: fade-up 0.8s 1s forwards;
+    }
+    .btn-grad {
+      background: var(--brand-grad); color: #fff;
+      font-family: 'Cinzel', serif; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 0.9rem 2rem; text-decoration: none; display: inline-block;
+      border: none; cursor: pointer; transition: all 0.25s;
+    }
+    .btn-grad:hover { transform: translateY(-2px); box-shadow: 0 8px 28px var(--blue-glow); }
+    .btn-outline-light {
+      background: transparent; border: 1.5px solid rgba(245,237,216,0.35); color: rgba(245,237,216,0.85);
+      font-family: 'Cinzel', serif; font-size: 0.68rem; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 0.9rem 2rem; text-decoration: none; display: inline-block;
+      transition: all 0.25s;
+    }
+    .btn-outline-light:hover { border-color: rgba(245,237,216,0.7); background: rgba(245,237,216,0.07); transform: translateY(-2px); }
+    .hero-scroll {
+      position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      opacity: 0; animation: fade-in 1s 1.5s forwards;
+    }
+    .hero-scroll span { font-size: 0.52rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(245,237,216,0.35); }
+    .scroll-line { width: 1px; height: 44px; background: linear-gradient(to bottom, rgba(75,110,245,0.7), transparent); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:.9} }
+
+    /* ── MARQUEE ── */
+    .marquee-band { background: var(--brand-grad); padding: 0.8rem 0; overflow: hidden; }
+    .marquee-track { display: flex; animation: marquee 30s linear infinite; white-space: nowrap; }
+    .marquee-item {
+      font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.25em; text-transform: uppercase; color: rgba(255,255,255,0.88);
+      padding: 0 2.5rem; display: inline-flex; align-items: center; gap: 1rem;
+    }
+    .marquee-item::after { content: '✦'; opacity: 0.45; }
+    @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+    /* ── SECTIONS ── */
+    section { padding: 7rem 5vw; }
+    .section-tag {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 600;
+      letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 0.9rem;
+    }
+    .tag-blue { color: var(--blue); }
+    .tag-blue::before { content: ''; display: block; width: 26px; height: 1.5px; background: var(--blue); }
+    .tag-purple { color: var(--purple); }
+    .tag-purple::before { content: ''; display: block; width: 26px; height: 1.5px; background: var(--purple); }
+    .section-title {
+      font-family: 'Cinzel', serif; font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700; line-height: 1.1; color: var(--dark); margin-bottom: 0.9rem;
+    }
+    .grad-text {
+      background: var(--brand-grad);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .divider { width: 48px; height: 2px; background: var(--brand-grad); margin: 1.2rem 0 2rem; }
+    .section-lead { font-family: 'Lora', serif; font-style: italic; font-size: 1.05rem; color: var(--text-mid); line-height: 1.75; }
+
+    /* ── ABOUT ── */
+    #about { background: var(--cream2); }
+    .about-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 5rem; align-items: center; max-width: 1200px; margin: 0 auto;
+    }
+    /* ── BANNER PARALLAX VIEWER ── */
+    .about-visual { position: relative; }
+    .banner-viewport {
+      position: relative; overflow: hidden;
+      aspect-ratio: 3/2; background: var(--dark2);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+    }
+    .banner-img {
+      height: 100%; width: auto; display: block;
+      position: absolute; top: 0; left: 0;
+      will-change: transform;
+    }
+    .banner-viewport::before, .banner-viewport::after {
+      content: ''; position: absolute; top: 0; bottom: 0;
+      width: 70px; z-index: 2; pointer-events: none;
+    }
+    .banner-viewport::before { left: 0; background: linear-gradient(to right, rgba(14,13,32,0.75), transparent); }
+    .banner-viewport::after  { right: 0; background: linear-gradient(to left, rgba(14,13,32,0.75), transparent); }
+    .banner-scroll-hint {
+      position: absolute; bottom: 0.9rem; left: 50%; transform: translateX(-50%);
+      font-family: 'Cinzel', serif; font-size: 0.5rem; font-weight: 600;
+      letter-spacing: 0.28em; text-transform: uppercase;
+      color: rgba(245,237,216,0.4); z-index: 3;
+      display: flex; align-items: center; gap: 8px;
+      animation: pulse 2.5s infinite;
+      white-space: nowrap;
+    }
+    .about-badge {
+      position: absolute; bottom: -16px; right: -16px;
+      background: var(--brand-grad); color: #fff;
+      padding: 1.1rem 1.4rem; text-align: center; z-index: 4;
+    }
+    .about-badge .big { font-family: 'Cinzel', serif; font-size: 2.2rem; font-weight: 900; line-height: 1; display: block; }
+    .about-badge .small { font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; opacity: 0.9; }
+    .about-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2.5rem; }
+    .stat { border-left: 2px solid; padding-left: 1rem; }
+    .stat-blue { border-color: var(--blue); }
+    .stat-purple { border-color: var(--purple); }
+    .stat .n { font-family: 'Cinzel', serif; font-size: 1.7rem; font-weight: 700; line-height: 1; }
+    .stat-blue .n { color: var(--blue); }
+    .stat-purple .n { color: var(--purple); }
+    .stat .l { font-size: 0.7rem; color: var(--text-muted); margin-top: 3px; }
+
+    /* ── EVENTS ── */
+    #events { background: var(--cream); }
+    .events-head {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      max-width: 1200px; margin: 0 auto 4rem; flex-wrap: wrap; gap: 2rem;
+    }
+    .btn-outline {
+      background: transparent; border: 1.5px solid rgba(43,77,212,0.3); color: var(--blue);
+      font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 0.7rem 1.4rem; text-decoration: none; transition: all 0.25s;
+    }
+    .btn-outline:hover { background: var(--blue); color: #fff; }
+    .events-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 2px; max-width: 1200px; margin: 0 auto; }
+    .event-card {
+      background: var(--cream2); overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s; cursor: pointer;
+    }
+    .event-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(43,77,212,0.12); }
+    .event-img { aspect-ratio: 16/9; overflow: hidden; position: relative; }
+    .event-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+    .event-card:hover .event-img img { transform: scale(1.04); }
+    .event-date-tag {
+      position: absolute; top: 1rem; left: 1rem;
+      background: var(--brand-grad); color: #fff;
+      font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.1em; padding: 0.4rem 0.85rem;
+    }
+    .event-body { padding: 1.8rem; }
+    .event-where { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--blue); margin-bottom: 0.4rem; }
+    .event-name { font-family: 'Cinzel', serif; font-size: 1.2rem; font-weight: 700; color: var(--dark); line-height: 1.25; margin-bottom: 0.6rem; }
+    .event-info { font-size: 0.83rem; color: var(--text-mid); line-height: 1.7; margin-bottom: 1.3rem; }
+    .artist-chips { display: flex; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+    .chip {
+      font-size: 0.62rem; font-weight: 600; letter-spacing: 0.08em; padding: 0.28rem 0.65rem;
+    }
+    .chip-blue { background: rgba(43,77,212,0.08); border: 1px solid rgba(43,77,212,0.2); color: var(--blue); }
+    .chip-purple { background: rgba(139,47,201,0.08); border: 1px solid rgba(139,47,201,0.2); color: var(--purple); }
+    .chip-teal { background: rgba(10,188,188,0.08); border: 1px solid rgba(10,188,188,0.25); color: #0899a0; }
+    .event-price { font-size: 0.73rem; color: var(--text-muted); margin-bottom: 1.1rem; }
+    .event-price strong { color: var(--dark); }
+    .event-cta {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--blue); text-decoration: none;
+      border-bottom: 1px solid rgba(43,77,212,0.3); padding-bottom: 2px;
+      transition: all 0.2s;
+    }
+    .event-cta:hover { color: var(--purple); border-color: var(--purple); gap: 13px; }
+
+    /* ── ARTISTS INTRO ── */
+    #artists-intro {
+      background: var(--dark); padding: 6rem 5vw 3rem; text-align: center;
+    }
+    .artists-intro-title {
+      font-family: 'Cinzel', serif; font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 700; line-height: 1.1; color: var(--cream);
+    }
+    .artists-intro-sub {
+      font-family: 'Lora', serif; font-style: italic;
+      font-size: 1.05rem; color: rgba(245,237,216,0.55); margin-top: 0.8rem;
+    }
+
+    /* ── PARALLAX ARTIST SECTIONS ── */
+    .artist-parallax {
+      position: relative; min-height: 100vh;
+      display: flex; align-items: center; overflow: hidden;
+    }
+    .ap-bg {
+      position: absolute; inset: -20%;
+      background-size: cover; background-position: center;
+      background-repeat: no-repeat;
+      will-change: transform;
+    }
+    .ap-overlay { position: absolute; inset: 0; }
+    .ap-content {
+      position: relative; z-index: 2;
+      max-width: 1200px; width: 100%; margin: 0 auto; padding: 0 5vw;
+    }
+
+    /* TAN: left-aligned, blue tone */
+    #ap-tan .ap-bg {
+      background-image: url('https://static.wixstatic.com/media/681e56_2d32d76482b14346b7efb3a51a513410~mv2.png');
+    }
+    #ap-tan .ap-overlay {
+      background: linear-gradient(100deg, rgba(14,13,32,0.93) 0%, rgba(14,13,32,0.7) 50%, rgba(43,77,212,0.18) 100%);
+    }
+
+    /* RYAN DAIL: right-aligned, purple tone */
+    #ap-rd .ap-bg {
+      background-image: url('https://static.wixstatic.com/media/681e56_766dcaeb48ea49b4a23082afe76a68fe~mv2.png');
+      background-position: right center;
+    }
+    #ap-rd .ap-overlay {
+      background: linear-gradient(260deg, rgba(14,13,32,0.93) 0%, rgba(14,13,32,0.7) 50%, rgba(139,47,201,0.18) 100%);
+    }
+    #ap-rd .ap-content { display: flex; justify-content: flex-end; }
+
+    /* Amanda Nolan: left, teal tone */
+    #ap-an .ap-bg {
+      background-image: url('https://static.wixstatic.com/media/681e56_83dc06415beb409a84575ceef66c9701~mv2.png');
+      background-position: 30% center;
+    }
+    #ap-an .ap-overlay {
+      background: linear-gradient(100deg, rgba(14,13,32,0.92) 0%, rgba(14,13,32,0.65) 55%, rgba(10,188,188,0.12) 100%);
+    }
+
+    /* Grace Heyvaert: right, warm */
+    #ap-gv .ap-bg {
+      background-image: url('https://static.wixstatic.com/media/681e56_83dc06415beb409a84575ceef66c9701~mv2.png');
+      background-position: 60% center;
+    }
+    #ap-gv .ap-overlay {
+      background: linear-gradient(260deg, rgba(14,13,32,0.92) 0%, rgba(14,13,32,0.65) 55%, rgba(139,47,201,0.15) 100%);
+    }
+    #ap-gv .ap-content { display: flex; justify-content: flex-end; }
+
+    /* Ryan Stevenson: left, blue/deep */
+    #ap-rs .ap-bg {
+      background-image: url('https://static.wixstatic.com/media/681e56_83dc06415beb409a84575ceef66c9701~mv2.png');
+      background-position: 80% center;
+    }
+    #ap-rs .ap-overlay {
+      background: linear-gradient(100deg, rgba(14,13,32,0.93) 0%, rgba(14,13,32,0.7) 55%, rgba(43,77,212,0.2) 100%);
+    }
+
+    .artist-inner { max-width: 540px; }
+    .a-eyebrow {
+      font-family: 'Cinzel', serif; font-size: 0.58rem; font-weight: 600;
+      letter-spacing: 0.35em; text-transform: uppercase; margin-bottom: 0.8rem;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .a-eyebrow-blue { color: rgba(75,110,245,0.8); }
+    .a-eyebrow-blue::before { content: ''; display: block; width: 26px; height: 1px; background: rgba(75,110,245,0.5); }
+    .a-eyebrow-purple { color: rgba(168,85,247,0.85); }
+    .a-eyebrow-purple::before { content: ''; display: block; width: 26px; height: 1px; background: rgba(168,85,247,0.5); }
+    .a-eyebrow-teal { color: rgba(10,188,188,0.85); }
+    .a-eyebrow-teal::before { content: ''; display: block; width: 26px; height: 1px; background: rgba(10,188,188,0.5); }
+    #ap-rd .a-eyebrow, #ap-gv .a-eyebrow { justify-content: flex-end; }
+    #ap-rd .a-eyebrow::before, #ap-gv .a-eyebrow::before { display: none; }
+    #ap-rd .a-eyebrow::after { content: ''; display: block; width: 26px; height: 1px; background: rgba(168,85,247,0.5); }
+    #ap-gv .a-eyebrow::after { content: ''; display: block; width: 26px; height: 1px; background: rgba(168,85,247,0.5); }
+    .a-name {
+      font-family: 'Cinzel', serif; font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 900; line-height: 1; color: var(--cream); margin-bottom: 0.4rem;
+    }
+    .a-name-blue { text-shadow: 0 0 60px rgba(43,77,212,0.45); }
+    .a-name-purple { text-shadow: 0 0 60px rgba(139,47,201,0.5); }
+    .a-name-teal { text-shadow: 0 0 60px rgba(10,188,188,0.4); }
+    .a-role {
+      font-family: 'Lora', serif; font-style: italic; font-size: 1.05rem; margin-bottom: 1.2rem;
+    }
+    .a-role-blue { color: rgba(75,110,245,0.85); }
+    .a-role-purple { color: rgba(168,85,247,0.85); }
+    .a-role-teal { color: rgba(10,188,188,0.85); }
+    #ap-rd .a-role, #ap-gv .a-role { text-align: right; }
+    .a-divider { width: 48px; height: 2px; margin-bottom: 1.5rem; }
+    .a-div-blue { background: linear-gradient(to right, var(--blue-light), transparent); }
+    .a-div-purple { background: linear-gradient(to right, var(--purple-light), transparent); }
+    .a-div-teal { background: linear-gradient(to right, var(--teal), transparent); }
+    #ap-rd .a-divider, #ap-gv .a-divider { background: none; margin-left: auto; }
+    #ap-rd .a-divider { background: linear-gradient(to left, var(--purple-light), transparent); }
+    #ap-gv .a-divider { background: linear-gradient(to left, var(--purple-light), transparent); }
+    .a-bio {
+      font-size: 0.88rem; color: rgba(245,237,216,0.65); line-height: 1.85;
+      margin-bottom: 2rem;
+    }
+    #ap-rd .a-bio, #ap-gv .a-bio { text-align: right; }
+    .a-details {
+      display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 2.2rem;
+    }
+    #ap-rd .a-details, #ap-gv .a-details { justify-content: flex-end; }
+    .a-detail { display: flex; flex-direction: column; gap: 3px; }
+    .a-detail .lbl { font-size: 0.55rem; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(245,237,216,0.35); }
+    .a-detail .val { font-family: 'Cinzel', serif; font-size: 0.8rem; font-weight: 600; color: var(--cream); }
+    .a-event-tag {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 0.3rem 0.75rem; margin-bottom: 1.8rem;
+    }
+    .a-tag-blue { background: rgba(43,77,212,0.25); border: 1px solid rgba(75,110,245,0.35); color: rgba(75,110,245,0.9); }
+    .a-tag-purple { background: rgba(139,47,201,0.25); border: 1px solid rgba(168,85,247,0.35); color: rgba(168,85,247,0.9); }
+    .a-tag-teal { background: rgba(10,188,188,0.2); border: 1px solid rgba(10,188,188,0.35); color: rgba(10,188,188,0.9); }
+
+    /* ── FESTIVAL SECTION ── */
+    #festival {
+      position: relative; overflow: hidden; text-align: center; padding: 0;
+    }
+    .festival-venue-photo {
+      position: relative; height: 70vh; min-height: 500px; overflow: hidden;
+    }
+    .festival-venue-photo img {
+      width: 100%; height: 100%; object-fit: cover;
+      filter: brightness(0.55);
+    }
+    .festival-venue-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(14,13,32,1) 0%, rgba(14,13,32,0.3) 50%, rgba(14,13,32,0.05) 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+      padding: 4rem 5vw;
+    }
+    .festival-body {
+      background: var(--dark); padding: 5rem 5vw 7rem; position: relative;
+    }
+    .festival-glow {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(43,77,212,0.1) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .festival-logo-img {
+      width: 90px; display: block; margin: 0 auto 1.5rem;
+      filter: drop-shadow(0 0 20px var(--purple-glow)) drop-shadow(0 0 40px var(--blue-glow));
+    }
+    .festival-title {
+      font-family: 'Cinzel', serif; font-size: clamp(2rem, 5vw, 3.8rem);
+      font-weight: 900; line-height: 1.05; color: var(--cream);
+      position: relative; z-index: 1;
+    }
+    .festival-meta { margin: 1.5rem auto 0; max-width: 560px; position: relative; z-index: 1; }
+    .festival-badge {
+      display: inline-flex; align-items: center; gap: 0.7rem;
+      background: var(--brand-grad); color: #fff;
+      font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 0.5rem 1.4rem; margin-bottom: 1.5rem;
+    }
+    .festival-lineup-label {
+      font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.3em; text-transform: uppercase;
+      color: rgba(245,237,216,0.4); margin-bottom: 1.5rem;
+    }
+    .festival-lineup {
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
+      justify-content: center; margin-bottom: 2rem;
+    }
+    .festival-artist-chip {
+      font-family: 'Cinzel', serif; font-size: 0.75rem; font-weight: 600;
+      padding: 0.5rem 1.1rem;
+    }
+    .fac-blue { background: rgba(43,77,212,0.2); border: 1px solid rgba(75,110,245,0.3); color: rgba(75,110,245,0.95); }
+    .fac-purple { background: rgba(139,47,201,0.2); border: 1px solid rgba(168,85,247,0.3); color: rgba(168,85,247,0.95); }
+    .fac-teal { background: rgba(10,188,188,0.15); border: 1px solid rgba(10,188,188,0.3); color: rgba(10,188,188,0.9); }
+    .festival-detail {
+      font-size: 0.82rem; color: rgba(245,237,216,0.5); margin-bottom: 0.3rem;
+    }
+    .festival-detail strong { color: rgba(245,237,216,0.85); }
+    .festival-cta { margin-top: 2.5rem; position: relative; z-index: 1; }
+
+    /* ── NEWSLETTER ── */
+    #newsletter { background: var(--cream2); text-align: center; padding: 7rem 5vw; position: relative; overflow: hidden; }
+    #newsletter::before {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(90deg,transparent,transparent 80px,rgba(43,77,212,0.02) 80px,rgba(43,77,212,0.02) 81px),
+                  repeating-linear-gradient(0deg,transparent,transparent 80px,rgba(43,77,212,0.02) 80px,rgba(43,77,212,0.02) 81px);
+    }
+    .nl-form { display: flex; max-width: 490px; margin: 2.5rem auto 0; position: relative; z-index: 1; }
+    .nl-input {
+      flex: 1; background: #fff; border: 1.5px solid rgba(43,77,212,0.2); border-right: none;
+      color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.88rem;
+      padding: 0.9rem 1.1rem; outline: none; transition: border-color 0.2s;
+    }
+    .nl-input::placeholder { color: var(--text-muted); }
+    .nl-input:focus { border-color: var(--blue); }
+    .nl-btn {
+      background: var(--brand-grad); color: #fff; border: none;
+      font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 0.9rem 1.5rem; cursor: pointer; transition: opacity 0.2s; white-space: nowrap;
+    }
+    .nl-btn:hover { opacity: 0.85; }
+    .nl-note { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.9rem; position: relative; z-index: 1; }
+
+    /* ── GET INVOLVED ── */
+    #involve { background: var(--cream); }
+    .involve-wrap { max-width: 1200px; margin: 0 auto; }
+    .involve-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; margin-top: 3.5rem; }
+    .involve-card {
+      background: var(--cream2); padding: 2.8rem 2.2rem;
+      position: relative; transition: transform 0.3s, box-shadow 0.3s; overflow: hidden;
+    }
+    .involve-card::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--brand-grad); transform: scaleX(0); transform-origin: left; transition: transform 0.35s;
+    }
+    .involve-card:hover::after { transform: scaleX(1); }
+    .involve-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(43,77,212,0.1); }
+    .involve-icon { font-size: 2rem; margin-bottom: 1.2rem; display: block; }
+    .involve-title { font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 700; color: var(--dark); margin-bottom: 0.7rem; }
+    .involve-desc { font-size: 0.84rem; color: var(--text-mid); line-height: 1.75; margin-bottom: 1.8rem; }
+    .involve-link {
+      font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--blue); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 7px; transition: gap 0.2s, color 0.2s;
+    }
+    .involve-link:hover { gap: 12px; color: var(--purple); }
+
+    /* ── QUOTE ── */
+    #quote-band { background: var(--brand-grad); padding: 5rem 5vw; text-align: center; position: relative; overflow: hidden; }
+    .quote-bg { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'Cinzel', serif; font-size: 20rem; color: rgba(255,255,255,0.04); pointer-events: none; white-space: nowrap; line-height: 1; }
+    .quote-body { font-family: 'Lora', serif; font-style: italic; font-size: clamp(1.2rem,2.5vw,1.7rem); color: rgba(255,255,255,0.9); line-height: 1.65; max-width: 700px; margin: 0 auto 1.2rem; position: relative; z-index: 1; }
+    .quote-cite { font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(255,255,255,0.45); position: relative; z-index: 1; }
+
+    /* ── FOOTER ── */
+    footer { background: var(--dark2); }
+    .footer-top-bar { height: 3px; background: var(--brand-grad); }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3.5rem; max-width: 1200px; margin: 0 auto; padding: 5rem 5vw 4rem; }
+    .f-brand img { width: 55px; margin-bottom: 1rem; }
+    .f-brand p { font-size: 0.82rem; color: rgba(245,237,216,0.45); line-height: 1.75; max-width: 250px; }
+    .f-social { display: flex; gap: 0.6rem; margin-top: 1.4rem; }
+    .f-social a {
+      width: 35px; height: 35px; border: 1px solid rgba(245,237,216,0.12);
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(245,237,216,0.4); text-decoration: none; font-size: 0.82rem; transition: all 0.2s;
+    }
+    .f-social a:hover { border-color: var(--blue-light); color: var(--blue-light); background: rgba(43,77,212,0.1); }
+    .f-col h4 {
+      font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 1.5rem;
+    }
+    .f-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+    .f-col ul a { font-size: 0.82rem; color: rgba(245,237,216,0.4); text-decoration: none; transition: color 0.2s; }
+    .f-col ul a:hover { color: rgba(245,237,216,0.88); }
+    .footer-bottom { border-top: 1px solid rgba(245,237,216,0.05); padding: 1.5rem 5vw; max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .footer-bottom p { font-size: 0.7rem; color: rgba(245,237,216,0.28); }
+    .footer-bottom span { font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* ── COUNTDOWN ── */
+    #countdown-band {
+      background: var(--dark2); padding: 3.5rem 5vw; text-align: center;
+      border-bottom: 1px solid rgba(43,77,212,0.12);
+    }
+    .cd-eyebrow {
+      font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.35em; text-transform: uppercase;
+      color: rgba(245,237,216,0.35); margin-bottom: 1.5rem;
+    }
+    .cd-grid {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0; margin-bottom: 2rem; flex-wrap: wrap;
+    }
+    .cd-unit { display: flex; flex-direction: column; align-items: center; min-width: clamp(70px,12vw,105px); }
+    .cd-num {
+      font-family: 'Cinzel', serif; font-size: clamp(2.2rem, 6vw, 4.2rem);
+      font-weight: 900; line-height: 1;
+      background: var(--brand-grad);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      display: block; transition: transform 0.12s ease;
+    }
+    .cd-num.tick { transform: scale(1.06); }
+    .cd-unit-lbl {
+      font-family: 'Cinzel', serif; font-size: 0.48rem; font-weight: 700;
+      letter-spacing: 0.28em; text-transform: uppercase;
+      color: rgba(245,237,216,0.28); margin-top: 0.4rem;
+    }
+    .cd-sep {
+      font-family: 'Cinzel', serif; font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 900; color: rgba(43,77,212,0.3);
+      padding: 0 0.15rem; margin-bottom: 1.1rem; align-self: flex-start; margin-top: 0.1rem;
+    }
+    .cd-cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'Cinzel', serif; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--purple-light); text-decoration: none;
+      border-bottom: 1px solid rgba(168,85,247,0.35); padding-bottom: 2px;
+      transition: all 0.2s;
+    }
+    .cd-cta:hover { color: var(--blue-light); border-color: rgba(75,110,245,0.5); gap: 14px; }
+
+    /* ── PHOTO GALLERY — POLAROID WALL ── */
+    #gallery {
+      background: #111018;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(43,77,212,0.06) 0%, transparent 60%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23111018'/%3E%3Crect width='1' height='1' x='0' y='0' fill='%23ffffff' opacity='0.015'/%3E%3Crect width='1' height='1' x='2' y='2' fill='%23ffffff' opacity='0.01'/%3E%3C/svg%3E");
+      padding: 7rem 3vw 6rem;
+    }
+    .polaroid-wall {
+      display: flex; flex-wrap: wrap;
+      justify-content: center; align-items: flex-start;
+      gap: 1.4rem 1rem;
+      max-width: 1240px; margin: 3rem auto 0;
+      padding: 1rem 0 3rem;
+    }
+    .polaroid-card {
+      background: #f8f3ea;
+      padding: 10px 10px 50px;
+      width: 195px;
+      flex-shrink: 0;
+      position: relative;
+      cursor: pointer;
+      box-shadow: 3px 4px 14px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.3);
+      transition: transform 0.35s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.35s, z-index 0s;
+      z-index: 1;
+    }
+    .polaroid-card:hover {
+      transform: rotate(0deg) scale(1.12) translateY(-14px) !important;
+      box-shadow: 10px 18px 40px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.4);
+      z-index: 20;
+    }
+    /* Tape strip on top */
+    .polaroid-card::before {
+      content: '';
+      position: absolute;
+      top: -10px; left: 50%; transform: translateX(-50%);
+      width: 44px; height: 20px;
+      background: rgba(255,255,240,0.55);
+      border: 1px solid rgba(255,255,220,0.4);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .polaroid-img {
+      width: 100%; aspect-ratio: 3/4;
+      object-fit: cover; display: block;
+    }
+    .polaroid-caption {
+      font-family: 'Caveat', cursive;
+      font-size: 1.05rem; font-weight: 600;
+      color: #3a3020; text-align: center;
+      position: absolute;
+      bottom: 0; left: 10px; right: 10px;
+      height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1.2;
+    }
+    /* Lightbox */
+    #lightbox {
+      display: none; position: fixed; inset: 0;
+      background: rgba(14,13,32,0.97); z-index: 500;
+      align-items: center; justify-content: center; flex-direction: column;
+    }
+    #lightbox.open { display: flex; }
+    #lb-img { max-width: 88vw; max-height: 78vh; object-fit: contain; }
+    .lb-close {
+      position: absolute; top: 1.5rem; right: 2rem;
+      background: none; border: none; color: rgba(245,237,216,0.5);
+      font-size: 2rem; cursor: pointer; line-height: 1; transition: color 0.2s;
+    }
+    .lb-close:hover { color: var(--cream); }
+    .lb-nav { display: flex; gap: 1.5rem; margin-top: 1.5rem; align-items: center; }
+    .lb-btn {
+      background: rgba(245,237,216,0.07); border: 1px solid rgba(245,237,216,0.15);
+      color: var(--cream); font-size: 1.1rem; width: 44px; height: 44px;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+    }
+    .lb-btn:hover { background: rgba(43,77,212,0.3); border-color: var(--blue); }
+    .lb-count { font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.2em; color: rgba(245,237,216,0.35); }
+
+    /* ── ARTIST VIDEO MODAL ── */
+    #artist-video-modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(14,13,32,0.95); z-index: 600;
+      align-items: center; justify-content: center; flex-direction: column;
+      backdrop-filter: blur(6px);
+    }
+    #artist-video-modal.open { display: flex; }
+    .avm-close {
+      position: absolute; top: 2rem; right: 2.5rem;
+      background: none; border: none; color: rgba(245,237,216,0.6);
+      font-size: 2.2rem; cursor: pointer; line-height: 1;
+      transition: color 0.2s;
+    }
+    .avm-close:hover { color: var(--cream); }
+    .avm-content {
+      width: 90%; max-width: 900px;
+      aspect-ratio: 16 / 9;
+    }
+    .avm-content iframe {
+      width: 100%; height: 100%;
+      border: none; border-radius: 4px;
+    }
+    .avm-title {
+      position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      font-family: 'Cinzel', serif; font-size: 0.9rem; font-weight: 700;
+      color: rgba(245,237,216,0.6); text-align: center;
+    }
+    .play-btn {
+      background: rgba(43,77,212,0.15); border: 1px solid rgba(75,110,245,0.4);
+      color: var(--blue-light);
+      font-family: 'Cinzel', serif; font-size: 0.55rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 0.4rem 0.8rem; margin-top: 0.5rem;
+      cursor: pointer; transition: all 0.2s;
+      display: inline-block;
+    }
+    .play-btn:hover {
+      background: rgba(43,77,212,0.3); border-color: var(--blue-light);
+    }
+
+    /* ── FAQ ── */
+    #faq { background: var(--cream2); padding: 7rem 5vw; }
+    .faq-list { max-width: 760px; margin: 3rem auto 0; }
+    .faq-item { border-bottom: 1px solid rgba(43,77,212,0.1); }
+    .faq-q {
+      width: 100%; background: none; border: none; padding: 1.4rem 0;
+      display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; text-align: left; gap: 1rem;
+    }
+    .faq-q:hover .faq-q-text { color: var(--blue); }
+    .faq-q-text {
+      font-family: 'Cinzel', serif; font-size: 0.9rem; font-weight: 600;
+      color: var(--dark); transition: color 0.2s;
+    }
+    .faq-icon {
+      width: 26px; height: 26px; border: 1.5px solid rgba(43,77,212,0.25); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--blue); font-size: 1rem; font-weight: 300; flex-shrink: 0;
+      transition: transform 0.35s, background 0.3s, border-color 0.3s, color 0.3s;
+    }
+    .faq-item.open .faq-icon {
+      transform: rotate(45deg);
+      background: var(--brand-grad); border-color: transparent; color: #fff;
+    }
+    .faq-body { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1); }
+    .faq-body-inner {
+      font-size: 0.88rem; color: var(--text-mid); line-height: 1.82;
+      padding-bottom: 1.4rem; max-width: 640px;
+    }
+    .faq-body-inner a { color: var(--blue); text-decoration: underline; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fade-up { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fade-in { from{opacity:0} to{opacity:1} }
+    .reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.7s, transform 0.7s; }
+    .reveal.visible { opacity: 1; transform: none; }
+    .d1 { transition-delay: 0.1s; }
+    .d2 { transition-delay: 0.22s; }
+    .d3 { transition-delay: 0.34s; }
+
+    /* ── WORD REVEAL ── */
+    .wr-word {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1);
+    }
+    .wr-word.lit { opacity: 1; transform: none; }
+    .word-reveal { opacity: 1 !important; transform: none !important; }
+
+    /* ── COUNT-UP STATS ── */
+    .stat .n { transition: color 0.3s; }
+
+    /* ── EVENTS STACKED ── */
+    #events { padding-bottom: 0 !important; }
+    #events-scroll { position: relative; }
+    #events-sticky { background: var(--dark2); position: relative; }
+    #events-sticky .evt-video-bg {
+      position: absolute; inset: 0; overflow: hidden; z-index: 0;
+    }
+    #events-sticky .evt-video-bg video {
+      width: 100%; height: 100%; object-fit: cover; object-position: center;
+      display: block; opacity: 0.35;
+    }
+    #events-sticky .evt-panel { position: relative; z-index: 1; }
+    .evt-panel {
+      display: flex; flex-direction: column;
+      max-width: 900px; margin: 0 auto;
+      border-bottom: 1px solid rgba(245,237,216,0.05);
+      padding: 3rem 2rem;
+    }
+    .evt-panel-img { overflow: hidden; height: auto; min-height: unset; position: relative; }
+    .evt-panel-img img { width: 100%; height: auto; display: block; border-radius: 8px; }
+    #evt-p1 .evt-panel-img { background: transparent; }
+    #evt-p1 .evt-panel-img img { object-fit: contain; }
+    #evt-p2 .evt-panel-img { background: transparent; }
+    #evt-p2 .evt-panel-img img { object-fit: contain; object-position: center center; }
+    .evt-panel-img::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to right, transparent 60%, var(--dark2) 100%);
+    }
+    .evt-panel-info {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 4rem 4vw 4rem 2vw;
+    }
+    .evt-panel-num {
+      font-family: 'Cinzel', serif; font-size: 0.55rem; font-weight: 700;
+      letter-spacing: 0.35em; text-transform: uppercase;
+      color: rgba(245,237,216,0.25); margin-bottom: 1.8rem;
+    }
+    .evt-panel-date {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--brand-grad); color: #fff;
+      font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.1em; padding: 0.45rem 0.9rem; margin-bottom: 1.2rem;
+      width: fit-content;
+    }
+    .evt-panel-where { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--blue-light); margin-bottom: 0.7rem; }
+    .evt-panel-name {
+      font-family: 'Cinzel', serif; font-size: clamp(1.5rem, 3vw, 2.5rem);
+      font-weight: 900; line-height: 1.1; color: var(--cream); margin-bottom: 1rem;
+    }
+    .evt-panel-desc { font-size: 0.83rem; color: rgba(245,237,216,0.55); line-height: 1.75; margin-bottom: 1.3rem; max-width: 420px; }
+    .evt-panel-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+    .evt-panel-price { font-size: 0.7rem; color: rgba(245,237,216,0.4); margin-bottom: 1.5rem; }
+    .evt-panel-price strong { color: rgba(245,237,216,0.8); }
+    .evt-dots { display: none; }
+    .evt-scroll-hint { display: none; }
+    .evt-scroll-hint-hidden {
+      position: absolute; bottom: 2rem; right: 5vw;
+      font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: rgba(245,237,216,0.25); animation: pulse 2.5s infinite;
+    }
+
+    /* ── FESTIVAL PINNED BUILD ── */
+    #festival-scroll { position: relative; height: 680vh; }
+    #festival-sticky {
+      position: sticky; top: 0; height: 100vh; overflow: hidden;
+    }
+    .fest-bg {
+      position: absolute; inset: 0;
+      background-image: url('https://static.wixstatic.com/media/681e56_a6c8f0c510e84d518d9dd63d969b8f39f000.jpg');
+      background-size: cover; background-position: center 42%;
+      filter: brightness(0.3) saturate(0.8);
+    }
+    .fest-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(14,13,32,0.95) 0%, rgba(14,13,32,0.4) 50%, rgba(14,13,32,0.2) 100%);
+    }
+    .fest-content {
+      position: relative; z-index: 2; height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 5rem 5vw 3rem;
+    }
+    .fest-header { text-align: center; margin-bottom: 3.5rem; }
+    .fest-badge {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      background: var(--brand-grad); color: #fff;
+      font-family: 'Cinzel', serif; font-size: 0.58rem; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      padding: 0.4rem 1.2rem; margin-bottom: 1rem;
+    }
+    .fest-main-title {
+      font-family: 'Cinzel', serif; font-size: clamp(1.6rem, 4vw, 3.2rem);
+      font-weight: 900; line-height: 1.05; color: var(--cream);
+    }
+    .fest-date-line {
+      font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: rgba(245,237,216,0.4); margin-top: 0.5rem;
+    }
+    .fest-days-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  max-width: 1100px;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+.fest-day-col { display: flex; flex-direction: column; gap: 0.6rem; flex: 1; }
+.fest-day-label {
+  font-family: 'Cinzel', serif; font-size: 0.56rem; font-weight: 700;
+  letter-spacing: 0.28em; text-transform: uppercase;
+  padding-bottom: 0.5rem; margin-bottom: 0.3rem;
+  border-bottom: 1px solid rgba(245,237,216,0.1);
+}
+.fdl-fri { color: rgba(75,110,245,0.7); border-color: rgba(75,110,245,0.2); }
+.fdl-sat { color: rgba(168,85,247,0.7); border-color: rgba(168,85,247,0.2); }
+.fa-card {
+  background: rgba(14,13,32,0.72);
+  border: 1px solid rgba(245,237,216,0.07);
+  padding: 0.9rem 1.1rem;
+  opacity: 0; transform: translateY(28px);
+  display: flex; align-items: center; gap: 0.9rem;
+  transition: border-color 0.4s;
+  flex: 1;
+}
+.fa-card.shown { border-color: rgba(245,237,216,0.14); }
+.fa-card-headliner { border-left: 2px solid; }
+.fa-hl-fri { border-left-color: rgba(75,110,245,0.6); }
+.fa-hl-sat { border-left-color: rgba(168,85,247,0.6); }
+.fa-num {
+  font-family: 'Cinzel', serif; font-size: 0.48rem; font-weight: 700;
+  letter-spacing: 0.25em; text-transform: uppercase; min-width: 22px;
+}
+.fa-num-1, .fa-num-2, .fa-num-3, .fa-num-4 { color: rgba(75,110,245,0.6); }
+.fa-num-5, .fa-num-6, .fa-num-7, .fa-num-8 { color: rgba(168,85,247,0.6); }
+.fa-text { flex: 1; }
+.fa-name {
+  font-family: 'Cinzel', serif; font-size: clamp(0.85rem, 1.4vw, 1.05rem);
+  font-weight: 900; color: var(--cream); line-height: 1.15; margin-bottom: 0.15rem;
+}
+.fa-role { font-size: 0.55rem; color: rgba(245,237,216,0.3); letter-spacing: 0.1em; text-transform: uppercase; }
+.fa-headliner-badge {
+  font-size: 0.48rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 0.2rem 0.5rem; border: 1px solid; white-space: nowrap;
+}
+.fhb-fri { color: rgba(75,110,245,0.8); border-color: rgba(75,110,245,0.3); background: rgba(75,110,245,0.08); }
+.fhb-sat { color: rgba(168,85,247,0.8); border-color: rgba(168,85,247,0.3); background: rgba(168,85,247,0.08); }
+    .fest-counter {
+      font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.3em; text-transform: uppercase;
+      color: rgba(245,237,216,0.3); height: 1.2em;
+      transition: color 0.3s; margin-bottom: 1.5rem;
+    }
+    .fest-cta {
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.6s, transform 0.6s;
+    }
+    /* ── ARTIST YOUTUBE OVERLAY ── */
+    .fa-play-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 0.7rem;
+      background: none; border: 1px solid rgba(245,237,216,0.18);
+      color: rgba(245,237,216,0.55); font-family: 'Cinzel', serif;
+      font-size: 0.52rem; font-weight: 600; letter-spacing: 0.15em;
+      text-transform: uppercase; padding: 0.35rem 0.7rem;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .fa-play-btn:hover { border-color: rgba(168,85,247,0.5); color: var(--purple-light); }
+    .fa-play-btn .play-arrow { font-size: 0.65rem; }
+    #yt-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(14,13,32,0.97);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 2rem;
+      transform: translateY(100%);
+      transition: transform 0.45s cubic-bezier(0.22,1,0.36,1);
+    }
+    #yt-overlay.open { transform: translateY(0); }
+    .yt-overlay-header {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; max-width: 700px; margin-bottom: 1.2rem;
+    }
+    .yt-artist-name {
+      font-family: 'Cinzel', serif; font-size: clamp(1rem,2.5vw,1.4rem);
+      font-weight: 700; color: var(--cream);
+    }
+    .yt-song-name {
+      font-size: 0.72rem; color: var(--purple-light);
+      letter-spacing: 0.1em; margin-top: 0.2rem;
+    }
+    .yt-close {
+      background: rgba(245,237,216,0.08); border: 1px solid rgba(245,237,216,0.15);
+      color: var(--cream); font-size: 1.1rem; width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0; transition: all 0.2s;
+    }
+    .yt-close:hover { background: rgba(43,77,212,0.3); border-color: var(--blue); }
+    .yt-frame-wrap {
+      width: 100%; max-width: 700px; aspect-ratio: 16/9;
+      background: #000;
+    }
+    .yt-frame-wrap iframe {
+      width: 100%; height: 100%; border: none;
+    }
+    @media (max-width: 900px) {
+      .evt-panel { grid-template-columns: 1fr; }
+      .evt-panel-img { height: auto; min-height: unset; }
+      .evt-panel-info { padding: 2rem 1.5rem; }
+      .fest-artists-grid { grid-template-columns: repeat(2,1fr); gap: 0.8rem; }
+    }
+    @media (max-width: 600px) {
+      .fest-artists-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+      .fa-card { padding: 1.2rem 1rem; }
+      /* Hero eyebrow — stack on mobile */
+      .hero-eyebrow { flex-direction: column; gap: 4px; }
+      .hero-eyebrow::before, .hero-eyebrow::after { display: none; }
+      .eyebrow-dot { display: none; }
+      /* Festival: disable sticky on mobile, let it scroll naturally */
+      #festival-scroll { height: auto; }
+      #festival-sticky { position: static; height: auto; overflow: visible; }
+      .fest-content { padding: 4rem 1.5rem 3rem; }
+      /* Lineup: stack day columns on small mobile */
+      .fest-days-row { grid-template-columns: 1fr; gap: 1rem; }
+      .fa-headliner-badge { display: none; }
+      .fest-main-title { font-size: 1.5rem; }
+      .fest-date-line { font-size: 0.58rem; letter-spacing: 0.1em; }
+      /* Make all festival content visible without scroll trigger */
+      .fa-card { opacity: 1 !important; transform: none !important; }
+      .fest-cta { opacity: 1 !important; transform: none !important; }
+      .fest-counter { display: none; }
+      /* Songs & Stories image crop */
+      #evt-p1 .evt-panel-img img { object-position: left center; }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .nav-links, .nav-cta { display: none; }
+      .hamburger { display: flex; }
+      .about-grid { grid-template-columns: 1fr; gap: 3rem; }
+      .involve-grid { grid-template-columns: 1fr 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+      #ap-rd .ap-content, #ap-gv .ap-content { justify-content: flex-start; }
+      #ap-rd .a-eyebrow, #ap-gv .a-eyebrow { justify-content: flex-start; }
+      #ap-rd .a-eyebrow::before, #ap-gv .a-eyebrow::before { content: ''; display: block; width: 26px; height: 1px; background: rgba(168,85,247,0.5); }
+      #ap-rd .a-eyebrow::after, #ap-gv .a-eyebrow::after { display: none; }
+      #ap-rd .a-role, #ap-gv .a-role { text-align: left; }
+      #ap-rd .a-divider { background: linear-gradient(to right, var(--purple-light), transparent); margin-left: 0; }
+      #ap-gv .a-divider { background: linear-gradient(to right, var(--purple-light), transparent); margin-left: 0; }
+      #ap-rd .a-bio, #ap-gv .a-bio { text-align: left; }
+      #ap-rd .a-details, #ap-gv .a-details { justify-content: flex-start; }
+    }
+    @media (max-width: 600px) {
+      section { padding: 5rem 1.5rem; }
+      .events-grid { grid-template-columns: 1fr; }
+      .involve-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .nl-form { flex-direction: column; }
+      .nl-input { border-right: 1.5px solid rgba(43,77,212,0.2); border-bottom: none; }
+      .hero-btns { flex-direction: column; align-items: center; }
+      .artist-parallax { min-height: 100vh; }
+      .ap-bg { background-attachment: scroll; inset: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav id="main-nav">
+  <a href="#" class="nav-logo">
+    <img src="https://static.wixstatic.com/media/681e56_419a3c6dcbc54496844d43e88fe14b61~mv2.png"
+         alt="BK" onerror="this.style.display='none'" />
+    <span class="nav-logo-text">Bound for<br/>the Kingdom</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#events">Events</a></li>
+    <li><a href="#festival-scroll">Festival</a></li>
+    <li><a href="#involve">Get Involved</a></li>
+    <li><a href="https://bk2025.itemorder.com" target="_blank">Store</a></li>
+    <li><a href="https://uniteresponse.org" target="_blank">Unit+E</a></li>
+  </ul>
+  <a href="#newsletter" class="nav-cta">Join Our List</a>
+  <button class="hamburger" id="hamburger" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-backdrop" id="nav-backdrop"></div>
+<div class="mobile-nav" id="mobile-nav">
+  <button class="mobile-close" id="mobile-close">✕</button>
+  <a href="#about">About</a>
+  <a href="#events">Events</a>
+  <a href="#festival-scroll">Festival</a>
+  <a href="#involve">Get Involved</a>
+  <a href="https://bk2025.itemorder.com" target="_blank">Store</a>
+  <a href="https://uniteresponse.org" target="_blank">Unit+E</a>
+  <a href="#newsletter">Join Our List</a>
+</div>
+
+<!-- ── CUSTOM CURSOR ── -->
+<div class="custom-cursor" id="custom-cursor"></div>
+
+<!-- ── 3D HERO SCENE ── -->
+<div id="scene-hero">
+  <canvas id="bftk-3d"></canvas>
+  <div id="scene-scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</div>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <div class="hero-bg">
+    <video autoplay muted loop playsinline>
+      <source src="hero-bg.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="hero-overlay"></div>
+  <canvas id="glitter-canvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-logo-wrap">
+      <img src="https://static.wixstatic.com/media/681e56_419a3c6dcbc54496844d43e88fe14b61~mv2.png"
+           alt="Bound for the Kingdom" onerror="this.style.display='none'" />
+    </div>
+    <div class="hero-eyebrow"><span class="eyebrow-line1">Clinton, Iowa</span><span class="eyebrow-dot">&nbsp;·&nbsp;</span><span class="eyebrow-line2">10+ Years of Live Music &amp; Faith</span></div>
+    <h1 class="hero-title">Bound for<br /><span class="grad">the Kingdom</span></h1>
+    <p class="hero-sub">Music. Community. Purpose.</p>
+    <p class="hero-desc">Over ten years of bringing people together through live music and faith — and we're just getting started.</p>
+    <div class="hero-btns">
+      <a href="#events" class="btn-grad">See Upcoming Events</a>
+      <a href="#festival-scroll" class="btn-outline-light">See the Lineup</a>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ── MARQUEE ── -->
+<div class="marquee-band">
+  <div class="marquee-track">
+    <span class="marquee-item">BFTK Fest 2026</span>
+    <span class="marquee-item">5 Year Anniversary</span>
+    <span class="marquee-item">Jon Micah Sumrall</span>
+    <span class="marquee-item">Olivia Lane</span>
+    <span class="marquee-item">Amanda Nolan</span>
+    <span class="marquee-item">Grace Heyvaert</span>
+    <span class="marquee-item">Ryan Stevenson</span>
+    <span class="marquee-item">Consumed By Fire</span>
+    <span class="marquee-item">Madison Watkins</span>
+    <span class="marquee-item">Songs &amp; Stories · Aug 6</span>
+    <span class="marquee-item">Sept 4–5 · Clinton IA</span>
+    <span class="marquee-item">Tenth Ave North</span>
+    <span class="marquee-item">Ryan Dail</span>
+    <span class="marquee-item">BFTK Fest 2026</span>
+    <span class="marquee-item">5 Year Anniversary</span>
+    <span class="marquee-item">Jon Micah Sumrall</span>
+    <span class="marquee-item">Olivia Lane</span>
+    <span class="marquee-item">Amanda Nolan</span>
+    <span class="marquee-item">Grace Heyvaert</span>
+    <span class="marquee-item">Ryan Stevenson</span>
+    <span class="marquee-item">Consumed By Fire</span>
+    <span class="marquee-item">Madison Watkins</span>
+    <span class="marquee-item">Songs &amp; Stories · Aug 6</span>
+    <span class="marquee-item">Sept 4–5 · Clinton IA</span>
+    <span class="marquee-item">Tenth Ave North</span>
+    <span class="marquee-item">Ryan Dail</span>
+  </div>
+</div>
+
+<!-- ── COUNTDOWN ── -->
+<div id="countdown-band">
+  <div class="cd-eyebrow">Festival opens in</div>
+  <div class="cd-grid">
+    <div class="cd-unit"><span class="cd-num" id="cd-days">--</span><span class="cd-unit-lbl">Days</span></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-unit"><span class="cd-num" id="cd-hrs">--</span><span class="cd-unit-lbl">Hours</span></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-unit"><span class="cd-num" id="cd-min">--</span><span class="cd-unit-lbl">Minutes</span></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-unit"><span class="cd-num" id="cd-sec">--</span><span class="cd-unit-lbl">Seconds</span></div>
+  </div>
+  <a href="https://www.eventbrite.com/e/bound-for-the-kingdom-tickets-1985555344485?aff=erellivmlt" target="_blank" class="cd-cta">Tickets on sale now! →</a>
+</div>
+
+<!-- ── ABOUT ── -->
+<section id="about">
+  <div class="about-grid">
+    <div class="about-visual reveal">
+      <div class="banner-viewport" id="banner-viewport">
+        <img class="banner-img" id="banner-img"
+          src="images/bftk-banner.jpg"
+          alt="BFTK Festival History" />
+        <div class="banner-scroll-hint">← scroll to explore →</div>
+      </div>
+      <div class="about-badge">
+        <span class="big">5</span>
+        <span class="small">Year<br />Anniversary</span>
+      </div>
+    </div>
+    <div>
+      <div class="section-tag tag-blue reveal">Our Story</div>
+      <h2 class="section-title word-reveal reveal d1">10+ Years of <span class="grad-text">Faith &amp; Music</span></h2>
+      <div class="divider reveal d1"></div>
+      <p class="reveal d2" style="color:var(--text-mid);line-height:1.85;font-size:0.95rem;margin-bottom:1.2rem;">
+        Bound for the Kingdom was built on a simple belief — that music has the power to move hearts, build community, and point people toward something greater. For over ten years, we've been living that out in Fulton, Illinois and surrounding areas.
+      </p>
+      <p class="reveal d2" style="color:var(--text-mid);line-height:1.85;font-size:0.95rem;margin-bottom:2.5rem;">
+        From intimate songs &amp; stories evenings to the outdoor stage at Riverview Bandshell, every event we host is crafted with care, purpose, and a deep love for the people who walk through the door.
+      </p>
+      <div class="about-stats reveal d3">
+        <div class="stat stat-blue"><div class="n" data-target="10" data-suffix="+">0</div><div class="l">Years of Events</div></div>
+        <div class="stat stat-purple"><div class="n" data-target="50" data-suffix="+">0</div><div class="l">Artists</div></div>
+        <div class="stat stat-blue"><div class="n" data-target="2" data-suffix="">0</div><div class="l">Events This Year</div></div>
+        <div class="stat stat-purple"><div class="n" data-target="1" data-suffix="">0</div><div class="l">Community</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── EVENTS ── -->
+<section id="events">
+  <div class="events-head reveal">
+    <div>
+      <div class="section-tag tag-purple">Upcoming</div>
+      <h2 class="section-title">Don't Miss<br /><span class="grad-text">These Events</span></h2>
+    </div>
+    <a href="https://www.eventbrite.com/e/bound-for-the-kingdom-tickets-1985555344485?aff=erellivmlt" target="_blank" class="btn-outline">View All on Eventbrite →</a>
+  </div>
+</section>
+
+<!-- ── EVENTS STICKY SCROLL ── -->
+<div id="events-scroll">
+  <div id="events-sticky">
+    <div class="evt-video-bg">
+      <video autoplay muted loop playsinline>
+        <source src="hero-bg.mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <!-- Panel 1: Songs & Stories -->
+    <div class="evt-panel" id="evt-p1">
+      <div class="evt-panel-img">
+        <img src="https://static.wixstatic.com/media/681e56_766dcaeb48ea49b4a23082afe76a68fe~mv2.png" alt="Songs and Stories" />
+      </div>
+      <div class="evt-panel-info">
+        <div class="evt-panel-num">Event 01 of 02</div>
+        <div class="evt-panel-date">Thu · August 6 · 6:30 PM</div>
+        <div class="evt-panel-where">📍 Crossview Church — Fulton, IL</div>
+        <h3 class="evt-panel-name">Songs &amp; Stories<br />w/ Tenth Ave North</h3>
+        <p class="evt-panel-desc">An intimate evening of live music and personal stories. Tenth Ave North headlines with special guest Ryan Dail opening the night.</p>
+        <div class="evt-panel-chips">
+          <span class="chip chip-blue">Tenth Ave North</span>
+          <span class="chip chip-purple">Ryan Dail</span>
+        </div>
+        <p class="evt-panel-price">GA <strong>$23.18</strong> · VIP w/ Tenth Ave North <strong>$39.19</strong> · Youth <strong>$17.85</strong></p>
+        <a href="https://www.eventbrite.com/e/a-night-of-songs-and-stories-w-tenth-ave-north-w-special-guest-ryan-dail-tickets-1984937589764?aff=ebdssbdestsearch#organizer-card" target="_blank" class="btn-grad" style="font-size:0.65rem;padding:0.75rem 1.6rem;">Get Tickets</a>
+      </div>
+    </div>
+
+    <!-- Panel 2: BFTK Festival -->
+    <div class="evt-panel" id="evt-p2">
+      <div class="evt-panel-img">
+        <img src="https://static.wixstatic.com/media/681e56_a6c8f0c510e84d518d9dd63d969b8f39f000.jpg" alt="BFTK Festival 2026" style="object-position:center 38%;" />
+      </div>
+      <div class="evt-panel-info">
+        <div class="evt-panel-num">Event 02 of 02</div>
+        <div class="evt-panel-date">Fri–Sat · Sept 4–5 · 2026</div>
+        <div class="evt-panel-where">📍 Riverview Bandshell — Clinton, IA</div>
+        <h3 class="evt-panel-name">Bound for the Kingdom<br />Festival 2026</h3>
+        <p class="evt-panel-desc">Two nights of faith and music at the Riverview Bandshell. Friday and Saturday, September 4–5, with 8 artists over the Labor Day weekend.</p>
+        <div class="evt-panel-chips">
+          <span class="chip chip-blue">Jon Micah Sumrall</span>
+          <span class="chip chip-purple">Ryan Stevenson</span>
+          <span class="chip chip-teal">Consumed By Fire</span>
+          <span class="chip chip-purple">Madison Watkins</span>
+          <span class="chip chip-blue">+ 4 more</span>
+        </div>
+        <p class="evt-panel-price">From <strong>$17.85</strong> student · <strong>$28.52</strong> adult advance · Prices rise after July 1</p>
+        <a href="https://www.eventbrite.com/e/bound-for-the-kingdom-tickets-1985555344485?aff=erellivmlt" target="_blank" class="btn-grad" style="font-size:0.65rem;padding:0.75rem 1.6rem;">Get Tickets</a>
+      </div>
+    </div>
+
+    <!-- Progress dots -->
+    <div class="evt-dots">
+      <span class="evt-dot active" id="evt-dot1"></span>
+      <span class="evt-dot" id="evt-dot2"></span>
+    </div>
+    <div class="evt-scroll-hint">Scroll to switch →</div>
+
+  </div>
+</div>
+
+<!-- ── FESTIVAL PINNED BUILD ── -->
+<div id="festival-scroll">
+  <div id="festival-sticky" id="festival">
+    <div class="fest-bg"></div>
+    <div class="fest-overlay"></div>
+    <div class="fest-content">
+
+      <div class="fest-header">
+        <div class="fest-badge">✦ 5 Year Anniversary ✦</div>
+        <h2 class="fest-main-title">Bound for the Kingdom<br /><span class="grad-text">Festival 2026</span></h2>
+        <p class="fest-date-line">Friday–Saturday, September 4–5 &nbsp;·&nbsp; 251 Ball Park Drive, Clinton IA</p>
+      </div>
+
+      <div class="fest-days-row">
+  <!-- Friday column -->
+  <div class="fest-day-col">
+    <div class="fest-day-label fdl-fri">Friday, September 4</div>
+    <div class="fa-card fa-card-headliner fa-hl-fri" id="fa-1" data-yt="tOxeyj7itJE" data-song="Strong Tower" data-artist="Jon Micah Sumrall">
+      <span class="fa-num fa-num-1">01</span>
+      <div class="fa-text">
+        <div class="fa-name">Jon Micah Sumrall<br /><span style="opacity:0.6;font-size:0.85em;">of Kutless</span></div>
+        <div class="fa-role">Friday Headliner</div>
+        <button class="fa-play-btn"><span class="play-arrow">▶</span> Watch a Song</button>
+      </div>
+      <span class="fa-headliner-badge fhb-fri">Headliner</span>
+    </div>
+    <div class="fa-card" id="fa-2" data-yt="JVfI1b2aK64" data-song="Woman at the Well" data-artist="Olivia Lane">
+      <span class="fa-num fa-num-2">02</span>
+      <div class="fa-text">
+        <div class="fa-name">Olivia Lane</div>
+        <div class="fa-role">SiriusXM · The Message</div>
+        <button class="fa-play-btn"><span class="play-arrow">▶</span> Watch a Song</button>
+      </div>
+    </div>
+    <div class="fa-card" id="fa-3" data-yt="BPs5h3nqUPA" data-song="Through Your Eyes" data-artist="Amanda Nolan">
+      <span class="fa-num fa-num-3">03</span>
+      <div class="fa-text">
+        <div class="fa-name">Amanda Nolan</div>
+        <div class="fa-role">Christian Music for Old Souls</div>
+        <button class="fa-play-btn"><span class="play-arrow">▶</span> Watch a Song</button>
+      </div>
+    </div>
+    <div class="fa-card" id="fa-4">
+      <span class="fa-num fa-num-4">04</span>
+      <div class="fa-text">
+        <div class="fa-name">Grace Heyvaert</div>
+        <div class="fa-role">River Church Worship</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Saturday column -->
+  <div class="fest-day-col">
+    <div class="fest-day-label fdl-sat">Saturday, September 5</div>
+    <div class="fa-card fa-card-headliner fa-hl-sat" id="fa-5" data-yt="-sx8wTnnfSc" data-song="Eye of the Storm" data-artist="Ryan Stevenson">
+      <span class="fa-num fa-num-5">05</span>
+      <div class="fa-text">
+        <div class="fa-name">Ryan Stevenson</div>
+        <div class="fa-role">Saturday Headliner</div>
+        <button class="fa-play-btn"><span class="play-arrow">▶</span> Watch a Song</button>
+      </div>
+      <span class="fa-headliner-badge fhb-sat">Headliner</span>
+    </div>
+    <div class="fa-card" id="fa-6" data-yt="bpTOcZN9JB4" data-song="First Things First" data-artist="Consumed By Fire">
+      <span class="fa-num fa-num-6">06</span>
+      <div class="fa-text">
+        <div class="fa-name">Consumed By Fire</div>
+        <div class="fa-role">First Things First</div>
+        <button class="fa-play-btn"><span class="play-arrow">▶</span> Watch a Song</button>
+      </div>
+    </div>
+    <div class="fa-card" id="fa-7" data-yt="U6OYVPK50DQ" data-song="Hold Me Tonight" data-artist="Madison Watkins">
+      <span class="fa-num fa-num-7">07</span>
+      <div class="fa-text">
+        <div class="fa-name">Madison Watkins</div>
+        <div class="fa-role">American Idol Finalist</div>
+        <button class="fa-play-btn"><span class="play-arrow">▶</span> Watch a Song</button>
+      </div>
+    </div>
+    <div class="fa-card" id="fa-8">
+      <span class="fa-num fa-num-8">08</span>
+      <div class="fa-text">
+        <div class="fa-name">Josh &amp; Sarah Furrow</div>
+        <div class="fa-role">CrossView Church Worship</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <div class="fest-counter" id="fest-counter"></div>
+
+      <div class="fest-cta" id="fest-cta">
+        <a href="https://www.eventbrite.com/e/bound-for-the-kingdom-tickets-1985555344485?aff=erellivmlt" target="_blank" class="btn-grad">Secure Your Tickets</a>
+      </div>
+
+
+    <!-- YouTube overlay panel -->
+    <div id="yt-overlay">
+      <div class="yt-overlay-header">
+        <div>
+          <div class="yt-artist-name" id="yt-artist-name"></div>
+          <div class="yt-song-name" id="yt-song-name"></div>
+        </div>
+        <button class="yt-close" id="yt-close">✕</button>
+      </div>
+      <div class="yt-frame-wrap">
+        <iframe id="yt-iframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── QUOTE ── -->
+<!-- ── PHOTO GALLERY ── -->
+<section id="gallery">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div class="section-tag tag-blue reveal">Past Events</div>
+    <h2 class="section-title word-reveal reveal d1" style="color:var(--cream);">See What <span class="grad-text">BFTK Is About</span></h2>
+    <p class="section-lead reveal d2" style="color:rgba(245,237,216,0.6);">Five years of unforgettable nights. This is what happens when faith, music, and community come together.</p>
+  </div>
+  <div class="polaroid-wall reveal">
+
+    <div class="polaroid-card" style="transform:rotate(-4deg)" data-lb="0">
+      <img class="polaroid-img" src="images/bftk-vertical-worship.jpg" alt="Vertical Worship" loading="lazy" style="object-position:center 30%;" />
+      <div class="polaroid-caption">Vertical Worship</div>
+    </div>
+
+    <div class="polaroid-card" style="transform:rotate(6deg)" data-lb="1">
+      <img class="polaroid-img" src="images/bftk-jordan-feliz.jpg" alt="Jordan Feliz" loading="lazy" />
+      <div class="polaroid-caption">Jordan Feliz</div>
+    </div>
+
+    <div class="polaroid-card" style="transform:rotate(-7deg)" data-lb="2">
+      <img class="polaroid-img" src="images/bftk-courtnie-ramirez.jpg" alt="Courtnie Ramirez" loading="lazy" />
+      <div class="polaroid-caption">Courtnie Ramirez</div>
+    </div>
+
+    <div class="polaroid-card" style="transform:rotate(3deg)" data-lb="3">
+      <img class="polaroid-img" src="images/bftk-jj-weeks.jpg" alt="JJ Weeks" loading="lazy" style="object-position:center 20%;" />
+      <div class="polaroid-caption">JJ Weeks</div>
+    </div>
+
+    <div class="polaroid-card" style="transform:rotate(-2deg)" data-lb="4">
+      <img class="polaroid-img" src="images/bftk-young-escape.jpg" alt="The Young Escape" loading="lazy" />
+      <div class="polaroid-caption">The Young Escape</div>
+    </div>
+
+    <div class="polaroid-card" style="transform:rotate(8deg)" data-lb="5">
+      <img class="polaroid-img" src="images/bftk-colton-neon.jpg" alt="Colton Dixon" loading="lazy" style="object-position:center 40%;" />
+      <div class="polaroid-caption">Colton Dixon</div>
+    </div>
+
+    <div class="polaroid-card" style="transform:rotate(-5deg)" data-lb="6">
+      <img class="polaroid-img" src="images/bftk-cochren-smoke.jpg" alt="Cochren &amp; Co." loading="lazy" />
+      <div class="polaroid-caption">Cochren &amp; Co.</div>
+    </div>
+
+    <div class="polaroid-card" style="transform:rotate(4deg)" data-lb="7">
+      <img class="polaroid-img" src="images/bftk-flame.jpg" alt="Flame" loading="lazy" />
+      <div class="polaroid-caption">Flame</div>
+    </div>
+
+    <div class="polaroid-card" style="transform:rotate(-6deg)" data-lb="8">
+      <img class="polaroid-img" src="images/bftk-cochren-piano.jpg" alt="Cochren &amp; Co." loading="lazy" style="object-position:center 20%;" />
+      <div class="polaroid-caption">Cochren &amp; Co.</div>
+    </div>
+
+    <div class="polaroid-card" style="transform:rotate(7deg)" data-lb="9">
+      <img class="polaroid-img" src="images/bftk-manic-drive.jpg" alt="Manic Drive" loading="lazy" />
+      <div class="polaroid-caption">Manic Drive</div>
+    </div>
+
+    <div class="polaroid-card" style="transform:rotate(-3deg)" data-lb="10">
+      <img class="polaroid-img" src="images/bftk-colton-spotlight.jpg" alt="Colton Dixon" loading="lazy" />
+      <div class="polaroid-caption">Colton Dixon</div>
+    </div>
+
+    <div class="polaroid-card" style="transform:rotate(5deg)" data-lb="11">
+      <img class="polaroid-img" src="images/bftk-peter-furler.jpg" alt="Peter Furler" loading="lazy" />
+      <div class="polaroid-caption">Peter Furler</div>
+    </div>
+
+    <div class="polaroid-card" style="transform:rotate(-8deg)" data-lb="12">
+      <img class="polaroid-img" src="images/bftk-cade-thompson.jpg" alt="Cade Thompson" loading="lazy" style="object-position:center 25%;" />
+      <div class="polaroid-caption">Cade Thompson</div>
+    </div>
+
+
+  </div>
+</section>
+
+<!-- Lightbox -->
+<div id="lightbox" role="dialog" aria-modal="true">
+  <button class="lb-close" id="lb-close" aria-label="Close">✕</button>
+  <img id="lb-img" src="" alt="" />
+  <div class="lb-nav">
+    <button class="lb-btn" id="lb-prev" aria-label="Previous">←</button>
+    <span class="lb-count" id="lb-count">1 / 5</span>
+    <button class="lb-btn" id="lb-next" aria-label="Next">→</button>
+  </div>
+</div>
+
+<!-- ── FACEBOOK CTA ── -->
+<section id="facebook-follow" style="background:var(--dark2);padding:6rem 2rem;text-align:center;">
+  <div style="max-width:600px;margin:0 auto;">
+    <div class="section-tag tag-purple reveal">Stay Connected</div>
+    <h2 class="section-title reveal" style="margin-bottom:0.75rem;color:var(--cream);">Follow Us on <span class="grad-text">Facebook</span></h2>
+    <p style="color:rgba(245,237,216,0.55);margin-bottom:2.5rem;font-size:0.95rem;line-height:1.7;">Stay up to date on events, announcements, and behind-the-scenes moments from Bound for the Kingdom.</p>
+    <a href="https://www.facebook.com/BoundForTheKingdomMusic" target="_blank" class="btn-grad" style="display:inline-block;text-decoration:none;font-size:0.85rem;">👍 Follow on Facebook →</a>
+  </div>
+</section>
+
+<!-- ── FAQ ── -->
+<section id="faq">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div class="section-tag tag-purple reveal">Know Before You Go</div>
+    <h2 class="section-title word-reveal reveal d1">Frequently <span class="grad-text">Asked Questions</span></h2>
+  </div>
+  <div class="faq-list">
+
+    <div class="faq-item reveal">
+      <button class="faq-q"><span class="faq-q-text">When and where is BFTK Fest 2026?</span><span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-body-inner">BFTK Fest 2026 runs Friday, September 4 through Saturday, September 5, 2026 at the Riverview Bandshell, 251 Ball Park Drive, Clinton, Iowa. Gates open Friday at 5:00 PM CDT and the festival runs through Saturday at 10:00 PM CDT.</div></div>
+    </div>
+
+    <div class="faq-item reveal d1">
+      <button class="faq-q"><span class="faq-q-text">How much do tickets cost?</span><span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-body-inner"><strong>A Night of Songs &amp; Stories</strong> (Aug 1): GA $23.18 · VIP w/ Tenth Ave North $39.19 · Youth $17.85.<br><br><strong>BFTK Fest</strong> (Aug 2–3): Student from $17.85 · Adult advance $28.52 · Prices rise after July 1.<br><br>All tickets available on <a href="https://www.eventbrite.com/e/bound-for-the-kingdom-tickets-1985555344485?aff=erellivmlt" target="_blank">Eventbrite</a>. We recommend purchasing early — prices increase as the event approaches.</div></div>
+    </div>
+
+    <div class="faq-item reveal d2">
+      <button class="faq-q"><span class="faq-q-text">Who is performing?</span><span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-body-inner"><strong>Friday, September 4:</strong> Jon Micah Sumrall of Kutless (headliner), Olivia Lane, Amanda Nolan, and Grace Heyvaert.<br /><br /><strong>Saturday, September 5:</strong> Ryan Stevenson (headliner), Consumed By Fire, Madison Watkins, and Josh &amp; Sarah Furrow.</div></div>
+    </div>
+
+    <div class="faq-item reveal">
+      <button class="faq-q"><span class="faq-q-text">Is this a rain-or-shine event?</span><span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-body-inner">Yes — BFTK Fest is a rain-or-shine event. We recommend bringing a rain poncho or light rain jacket. Weather updates will be communicated through our <a href="https://www.facebook.com/BoundForTheKingdomMusic" target="_blank">Facebook page</a> and email list. Sign up below to stay informed.</div></div>
+    </div>
+
+    <div class="faq-item reveal d1">
+      <button class="faq-q"><span class="faq-q-text">Can I bring a lawn chair or blanket?</span><span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-body-inner">Yes, lawn chairs and blankets are welcome at the Riverview Bandshell. Specific rules about chair height and setup areas will be confirmed closer to the event. Follow us on Facebook for updates.</div></div>
+    </div>
+
+    <div class="faq-item reveal d2">
+      <button class="faq-q"><span class="faq-q-text">Is parking available?</span><span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-body-inner">Parking details for 251 Ball Park Drive, Clinton, Iowa will be confirmed and posted before the festival. Join our email list to be notified as soon as venue and logistics information is released.</div></div>
+    </div>
+
+    <div class="faq-item reveal">
+      <button class="faq-q"><span class="faq-q-text">How can I get involved beyond attending?</span><span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-body-inner">There are several ways to be part of making BFTK happen — <a href="https://boundforthekingdom.org/volunteer">volunteer</a> on our event team, <a href="https://boundforthekingdom.org/donate">donate</a> to support the ministry, or partner with <a href="https://uniteresponse.org" target="_blank">Unit+E Response</a>. We'd love to have you involved.</div></div>
+    </div>
+
+  </div>
+</section>
+
+<div id="quote-band">
+  <div class="quote-bg">"</div>
+  <blockquote class="quote-body">"Speaking to one another with psalms, hymns, and songs from the Spirit. Sing and make music from your heart to the Lord."</blockquote>
+  <cite class="quote-cite">— Ephesians 5:19</cite>
+</div>
+
+<!-- ── NEWSLETTER ── -->
+<section id="newsletter">
+  <div class="section-tag tag-blue reveal" style="justify-content:center;">Stay Connected</div>
+  <h2 class="section-title reveal d1" style="font-size:clamp(1.8rem,3.5vw,2.8rem);">Receive <span class="grad-text">Exclusive Updates</span></h2>
+  <p class="section-lead reveal d2" style="max-width:430px;margin:.8rem auto 0;text-align:center;">
+    Be the first to hear about events, artist announcements, and subscriber-only opportunities.
+  </p>
+  <form class="nl-form reveal d3" onsubmit="handleSub(event)">
+    <input type="email" class="nl-input" placeholder="Your email address" required />
+    <button type="submit" class="nl-btn">Subscribe</button>
+  </form>
+  <p class="nl-note">No spam, ever. Unsubscribe any time.</p>
+</section>
+
+<!-- ── GET INVOLVED ── -->
+<section id="involve">
+  <div class="involve-wrap">
+    <div class="section-tag tag-purple reveal">Community</div>
+    <h2 class="section-title reveal d1">Get <span class="grad-text">Involved</span></h2>
+    <p class="section-lead reveal d2">There's a place for everyone — give, serve, or simply show up.</p>
+    <div class="involve-grid">
+      <div class="involve-card reveal">
+        <span class="involve-icon">🙏</span>
+        <h3 class="involve-title">Donate</h3>
+        <p class="involve-desc">Every dollar goes directly toward creating powerful experiences that move people and build community. Your generosity makes it all possible.</p>
+        <a href="https://boundforthekingdom.org/donate" class="involve-link">Give Now →</a>
+      </div>
+      <div class="involve-card reveal d1">
+        <span class="involve-icon">🤝</span>
+        <h3 class="involve-title">Volunteer</h3>
+        <p class="involve-desc">Join our passionate volunteer team — from event setup to hospitality, your help transforms the experience for every person who attends.</p>
+        <a href="https://boundforthekingdom.org/volunteer" class="involve-link">Join the Team →</a>
+      </div>
+      <div class="involve-card reveal d2">
+        <span class="involve-icon">🌐</span>
+        <h3 class="involve-title">Unit+E</h3>
+        <p class="involve-desc">Partner with Unit+E Response to amplify your impact in the community. Together we go further than we ever could alone.</p>
+        <a href="https://uniteresponse.org" target="_blank" class="involve-link">Learn More →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-top-bar"></div>
+  <div class="footer-grid">
+    <div class="f-brand">
+      <img src="https://static.wixstatic.com/media/681e56_419a3c6dcbc54496844d43e88fe14b61~mv2.png"
+           alt="BK" onerror="this.style.display='none'" />
+      <p>Bringing music, community, and faith together in Clinton, Iowa. Come as you are.</p>
+      <div class="f-social">
+        <a href="https://www.facebook.com/BoundForTheKingdomMusic" target="_blank" aria-label="Facebook">f</a>
+        <a href="#newsletter" aria-label="Email">✉</a>
+      </div>
+    </div>
+    <div class="f-col">
+      <h4>Navigate</h4>
+      <ul>
+        <li><a href="#about">About</a></li>
+        <li><a href="#events">Events</a></li>
+        <li><a href="#festival-scroll">Festival</a></li>
+        <li><a href="https://bk2025.itemorder.com" target="_blank">Store</a></li>
+      </ul>
+    </div>
+    <div class="f-col">
+      <h4>Connect</h4>
+      <ul>
+        <li><a href="#newsletter">Email List</a></li>
+        <li><a href="https://www.facebook.com/BoundForTheKingdomMusic" target="_blank">@BoundForTheKingdomMusic</a></li>
+        <li><a href="https://uniteresponse.org" target="_blank">Unit+E</a></li>
+        <li><a href="https://www.eventbrite.com/e/bound-for-the-kingdom-tickets-1985555344485?aff=erellivmlt" target="_blank">Eventbrite</a></li>
+      </ul>
+    </div>
+    <div class="f-col">
+      <h4>Get Involved</h4>
+      <ul>
+        <li><a href="https://boundforthekingdom.org/donate">Donate</a></li>
+        <li><a href="https://boundforthekingdom.org/volunteer">Volunteer</a></li>
+        <li><a href="https://www.boundforthekingdom.org">Main Site</a></li>
+        <li><a href="#newsletter">Stay Updated</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 Bound for the Kingdom · Clinton, Iowa</p>
+    <span>10+ Years · One Community · One Kingdom</span>
+  </div>
+</footer>
+
+<script>
+  // ── NAV SCROLL ──
+  const nav = document.getElementById('main-nav');
+  window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 50), { passive: true });
+
+  // ── MOBILE NAV ──
+  const ham = document.getElementById('hamburger');
+  const mob = document.getElementById('mobile-nav');
+  const bdr = document.getElementById('nav-backdrop');
+  const cls = document.getElementById('mobile-close');
+  const openNav = () => { mob.classList.add('open'); bdr.classList.add('open'); };
+  const closeNav = () => { mob.classList.remove('open'); bdr.classList.remove('open'); };
+  ham.addEventListener('click', openNav);
+  cls.addEventListener('click', closeNav);
+  bdr.addEventListener('click', closeNav);
+  mob.querySelectorAll('a').forEach(a => a.addEventListener('click', closeNav));
+
+  // ── SCROLL REVEAL ──
+  const revealObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+  // ── WORD REVEAL ──
+  function setupWordReveal() {
+    document.querySelectorAll('.word-reveal').forEach(el => {
+      // Walk child nodes: wrap text-node words in spans, leave element nodes as-is
+      function wrapWords(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const text = node.textContent;
+          if (!text.trim()) return node;
+          const frag = document.createDocumentFragment();
+          text.split(/(\s+)/).forEach(part => {
+            if (!part.trim()) {
+              frag.appendChild(document.createTextNode(part));
+            } else {
+              const span = document.createElement('span');
+              span.className = 'wr-word';
+              span.textContent = part;
+              frag.appendChild(span);
+            }
+          });
+          return frag;
+        }
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          // Wrap the element itself as one unit
+          const span = document.createElement('span');
+          span.className = 'wr-word';
+          span.appendChild(node.cloneNode(true));
+          return span;
+        }
+        return node.cloneNode(true);
+      }
+
+      const children = Array.from(el.childNodes);
+      el.innerHTML = '';
+      children.forEach(child => el.appendChild(wrapWords(child)));
+
+      const wordObs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (!e.isIntersecting) return;
+          const words = e.target.querySelectorAll('.wr-word');
+          words.forEach((w, i) => {
+            setTimeout(() => w.classList.add('lit'), i * 90);
+          });
+          wordObs.unobserve(e.target);
+        });
+      }, { threshold: 0.4 });
+      wordObs.observe(el);
+    });
+  }
+  setupWordReveal();
+
+  // ── COUNT-UP STATS ──
+  const countObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting || e.target.dataset.done) return;
+      e.target.dataset.done = '1';
+      const target = parseInt(e.target.dataset.target, 10);
+      const suffix = e.target.dataset.suffix || '';
+      const dur = 1400;
+      const start = performance.now();
+      (function tick(now) {
+        const t = Math.min(1, (now - start) / dur);
+        const eased = 1 - Math.pow(1 - t, 3);
+        e.target.textContent = Math.round(eased * target) + suffix;
+        if (t < 1) requestAnimationFrame(tick);
+      })(start);
+    });
+  }, { threshold: 0.6 });
+  document.querySelectorAll('[data-target]').forEach(el => countObs.observe(el));
+
+  // ── PARALLAX ──
+  function runParallax() {
+    const vh = window.innerHeight;
+    document.querySelectorAll('.ap-bg').forEach(bg => {
+      const section = bg.closest('.artist-parallax');
+      const rect = section.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > vh) return;
+      const progress = (vh - rect.top) / (vh + rect.height);
+      const offset = (progress - 0.5) * parseFloat(bg.dataset.speed || 0.35) * 300;
+      bg.style.transform = `translateY(${offset}px)`;
+    });
+  }
+  window.addEventListener('scroll', runParallax, { passive: true });
+  window.addEventListener('resize', runParallax);
+  runParallax();
+
+  // events are now stacked — no transition needed
+  function updateEvents() {}
+
+  // ── YOUTUBE ARTIST OVERLAY ──
+  (function() {
+    const overlay = document.getElementById('yt-overlay');
+    const iframe  = document.getElementById('yt-iframe');
+    const nameEl  = document.getElementById('yt-artist-name');
+    const songEl  = document.getElementById('yt-song-name');
+    const closeBtn= document.getElementById('yt-close');
+    if (!overlay) return;
+    function openVideo(ytId, artist, song) {
+      nameEl.textContent = artist;
+      songEl.textContent = '♪  ' + song;
+      iframe.src = 'https://www.youtube.com/embed/' + ytId + '?autoplay=1&rel=0';
+      overlay.classList.add('open');
+    }
+    function closeVideo() {
+      overlay.classList.remove('open');
+      setTimeout(function(){ iframe.src = ''; }, 450);
+    }
+    document.querySelectorAll('.fa-play-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var card = btn.closest('[data-yt]');
+        if (card) openVideo(card.dataset.yt, card.dataset.artist, card.dataset.song);
+      });
+    });
+    if (closeBtn) closeBtn.addEventListener('click', closeVideo);
+    overlay.addEventListener('click', function(e){ if (e.target === overlay) closeVideo(); });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.classList.contains('open')) closeVideo();
+    });
+  })();
+
+  // ── FESTIVAL PINNED BUILD ──
+  const festScroll = document.getElementById('festival-scroll');
+  const faCards = [
+    document.getElementById('fa-1'),
+    document.getElementById('fa-2'),
+    document.getElementById('fa-3'),
+    document.getElementById('fa-4'),
+    document.getElementById('fa-5'),
+    document.getElementById('fa-6'),
+    document.getElementById('fa-7'),
+    document.getElementById('fa-8'),
+  ];
+  const festCounter = document.getElementById('fest-counter');
+  const festCta = document.getElementById('fest-cta');
+  const festThresholds = [0.05, 0.18, 0.29, 0.40, 0.52, 0.63, 0.73, 0.82];
+
+  function updateFestival() {
+    if (!festScroll) return;
+    const rect = festScroll.getBoundingClientRect();
+    const total = festScroll.offsetHeight - window.innerHeight;
+    const p = Math.max(0, Math.min(1, -rect.top / total));
+
+    let shown = 0;
+    faCards.forEach((card, i) => {
+      if (!card) return;
+      const t = festThresholds[i];
+      if (p >= t) {
+        const localP = Math.min(1, (p - t) / 0.12);
+        const ease = 1 - Math.pow(1 - localP, 2);
+        card.style.opacity = String(ease);
+        card.style.transform = `translateY(${(1 - ease) * 36}px)`;
+        shown++;
+      } else {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(36px)';
+      }
+    });
+
+    if (festCounter) {
+      const labels = ['', 'Building the lineup...', '2 of 8 artists', '3 of 8 artists', '4 of 8 artists', '5 of 8 artists', '6 of 8 artists', '7 of 8 artists', 'The full lineup ✦'];
+      festCounter.textContent = labels[shown] || '';
+    }
+
+    if (festCta) {
+      const ctaP = Math.max(0, Math.min(1, (p - 0.84) / 0.1));
+      festCta.style.opacity = String(ctaP);
+      festCta.style.transform = `translateY(${(1 - ctaP) * 20}px)`;
+    }
+  }
+
+  function onScroll() {
+    updateEvents();
+    updateFestival();
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // ── BANNER HORIZONTAL PARALLAX ──
+  (function() {
+    const viewport = document.getElementById('banner-viewport');
+    const img = document.getElementById('banner-img');
+    const about = document.getElementById('about');
+    if (!viewport || !img || !about) return;
+
+    function updateBanner() {
+      const rect = about.getBoundingClientRect();
+      const vh = window.innerHeight;
+      // 0 = section top just entered bottom of screen, 1 = section bottom at top
+      const p = Math.max(0, Math.min(1,
+        1 - (rect.bottom / (vh + rect.height))
+      ));
+      const containerW = viewport.offsetWidth;
+      const imgW = img.naturalWidth && img.naturalHeight
+        ? img.naturalWidth * (viewport.offsetHeight / img.naturalHeight)
+        : img.offsetWidth;
+      const maxTravel = Math.max(0, imgW - containerW);
+      img.style.transform = `translateX(${-p * maxTravel}px)`;
+    }
+
+    img.addEventListener('load', updateBanner);
+    window.addEventListener('scroll', updateBanner, { passive: true });
+    window.addEventListener('resize', updateBanner);
+    updateBanner();
+  })();
+
+  // ── COUNTDOWN ──
+  (function() {
+    const target = new Date('2026-09-04T17:00:00-05:00');
+    const els = {
+      days: document.getElementById('cd-days'),
+      hrs:  document.getElementById('cd-hrs'),
+      min:  document.getElementById('cd-min'),
+      sec:  document.getElementById('cd-sec'),
+    };
+    const pad = n => String(n).padStart(2, '0');
+    let prevSec = '';
+    function tick() {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        Object.values(els).forEach(el => { if (el) el.textContent = '00'; });
+        return;
+      }
+      const days = Math.floor(diff / 86400000);
+      const hrs  = Math.floor((diff % 86400000) / 3600000);
+      const min  = Math.floor((diff % 3600000) / 60000);
+      const sec  = Math.floor((diff % 60000) / 1000);
+      if (els.days) els.days.textContent = pad(days);
+      if (els.hrs)  els.hrs.textContent  = pad(hrs);
+      if (els.min)  els.min.textContent  = pad(min);
+      if (els.sec) {
+        const s = pad(sec);
+        if (s !== prevSec) {
+          els.sec.classList.remove('tick');
+          void els.sec.offsetWidth;
+          els.sec.classList.add('tick');
+          setTimeout(() => els.sec && els.sec.classList.remove('tick'), 140);
+          prevSec = s;
+        }
+        els.sec.textContent = s;
+      }
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+
+  // ── GALLERY LIGHTBOX ──
+  (function() {
+    const images = Array.from(document.querySelectorAll('.polaroid-card[data-lb]'));
+    const lb = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lb-img');
+    const lbCount = document.getElementById('lb-count');
+    const lbClose = document.getElementById('lb-close');
+    const lbPrev = document.getElementById('lb-prev');
+    const lbNext = document.getElementById('lb-next');
+    if (!lb) return;
+    let current = 0;
+
+    function show(i) {
+      current = (i + images.length) % images.length;
+      const img = images[current].querySelector('.polaroid-img');
+      lbImg.src = img.src;
+      lbImg.alt = img.alt;
+      lbCount.textContent = `${current + 1} / ${images.length}`;
+      lb.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function close() {
+      lb.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    images.forEach((item, i) => item.addEventListener('click', () => show(i)));
+    lbClose.addEventListener('click', close);
+    lbPrev.addEventListener('click', () => show(current - 1));
+    lbNext.addEventListener('click', () => show(current + 1));
+    lb.addEventListener('click', e => { if (e.target === lb) close(); });
+    document.addEventListener('keydown', e => {
+      if (!lb.classList.contains('open')) return;
+      if (e.key === 'Escape') close();
+      if (e.key === 'ArrowLeft') show(current - 1);
+      if (e.key === 'ArrowRight') show(current + 1);
+    });
+  })();
+
+  // ── FAQ ACCORDION ──
+  document.querySelectorAll('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('.faq-item');
+      const body = item.querySelector('.faq-body');
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(o => {
+        o.classList.remove('open');
+        o.querySelector('.faq-body').style.maxHeight = '0';
+      });
+      if (!isOpen) {
+        item.classList.add('open');
+        body.style.maxHeight = body.scrollHeight + 'px';
+      }
+    });
+  });
+
+  // ── GLITTER CANVAS ──
+  (function() {
+    const canvas = document.getElementById('glitter-canvas');
+    const hero = document.getElementById('hero');
+    if (!canvas || !hero) return;
+    const ctx = canvas.getContext('2d');
+
+    const COLORS = [
+      [43, 77, 212],   // blue
+      [75, 110, 245],  // blue-light
+      [139, 47, 201],  // purple
+      [168, 85, 247],  // purple-light
+      [10, 188, 188],  // teal
+      [200, 180, 255], // pale lavender
+      [255, 255, 255], // white spark
+    ];
+
+    let W, H, particles;
+    const PARTICLE_COUNT = 180;
+    const mouse = { x: -9999, y: -9999, vx: 0, vy: 0, px: 0, py: 0 };
+
+    class Particle {
+      constructor() { this.reset(true); }
+      reset(initial) {
+        this.x = Math.random() * W;
+        this.y = initial ? Math.random() * H : -10;
+        this.ox = this.x; // original x
+        this.oy = this.y; // original y
+        this.vx = (Math.random() - 0.5) * 0.3;
+        this.vy = (Math.random() - 0.5) * 0.3;
+        this.dx = 0; // displacement
+        this.dy = 0;
+        this.size = Math.random() * 2.4 + 0.6;
+        this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        this.alpha = Math.random() * 0.6 + 0.2;
+        this.baseAlpha = this.alpha;
+        this.twinkleSpeed = Math.random() * 0.02 + 0.005;
+        this.twinklePhase = Math.random() * Math.PI * 2;
+        this.life = 1;
+      }
+      update(t) {
+        // Gentle drift
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Wrap
+        if (this.x < 0) this.x = W;
+        if (this.x > W) this.x = 0;
+        if (this.y < 0) this.y = H;
+        if (this.y > H) this.y = 0;
+
+        // Ripple: mouse velocity pushes particles
+        const mvx = mouse.vx, mvy = mouse.vy;
+        const speed = Math.sqrt(mvx*mvx + mvy*mvy);
+        if (speed > 0.5) {
+          const dx = this.x - mouse.x;
+          const dy = this.y - mouse.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          const radius = 120 + speed * 8;
+          if (dist < radius && dist > 0) {
+            const force = (1 - dist / radius) * speed * 0.4;
+            const nx = dx / dist;
+            const ny = dy / dist;
+            this.vx += nx * force;
+            this.vy += ny * force;
+          }
+        }
+
+        // Damping — particles slow down and return to gentle drift
+        this.vx *= 0.97;
+        this.vy *= 0.97;
+        const baseVMax = 0.4;
+        const v = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+        if (v > 4) { this.vx = (this.vx/v)*4; this.vy = (this.vy/v)*4; }
+
+        // Twinkle
+        this.twinklePhase += this.twinkleSpeed;
+        this.alpha = this.baseAlpha * (0.6 + 0.4 * Math.sin(this.twinklePhase));
+      }
+      draw() {
+        const grd = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 2.5);
+        const [r, g, b] = this.color;
+        grd.addColorStop(0, `rgba(${r},${g},${b},${this.alpha})`);
+        grd.addColorStop(0.5, `rgba(${r},${g},${b},${this.alpha * 0.4})`);
+        grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = grd;
+        ctx.fill();
+
+        // Bright core
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${this.alpha * 0.8})`;
+        ctx.fill();
+      }
+    }
+
+    // Shockwaves
+    const shockwaves = [];
+    class Shockwave {
+      constructor(x, y) {
+        this.x = x; this.y = y;
+        this.r = 0; this.maxR = Math.max(W, H) * 0.55;
+        this.alpha = 0.7; this.speed = 6;
+        this.done = false;
+      }
+      update() {
+        this.r += this.speed + this.r * 0.04;
+        this.alpha *= 0.94;
+        this.speed *= 0.98;
+        if (this.alpha < 0.01 || this.r > this.maxR) this.done = true;
+
+        // Push particles
+        particles.forEach(p => {
+          const dx = p.x - this.x, dy = p.y - this.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          const rim = 30;
+          if (Math.abs(dist - this.r) < rim) {
+            const strength = (1 - Math.abs(dist - this.r) / rim) * 3.5;
+            const nx = dist > 0 ? dx/dist : 0;
+            const ny = dist > 0 ? dy/dist : 0;
+            p.vx += nx * strength;
+            p.vy += ny * strength;
+          }
+        });
+      }
+      draw() {
+        // Inner ring
+        const g1 = ctx.createRadialGradient(this.x, this.y, this.r - 20, this.x, this.y, this.r + 20);
+        g1.addColorStop(0, `rgba(43,77,212,0)`);
+        g1.addColorStop(0.5, `rgba(139,47,201,${this.alpha * 0.4})`);
+        g1.addColorStop(1, `rgba(43,77,212,0)`);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(168,85,247,${this.alpha * 0.6})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Outer glow
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r + 8, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(75,110,245,${this.alpha * 0.25})`;
+        ctx.lineWidth = 6;
+        ctx.stroke();
+      }
+    }
+
+    function resize() {
+      const rect = hero.getBoundingClientRect();
+      W = canvas.width = rect.width;
+      H = canvas.height = rect.height;
+      particles = Array.from({ length: PARTICLE_COUNT }, () => new Particle());
+    }
+
+    let animId;
+    function loop() {
+      ctx.clearRect(0, 0, W, H);
+
+      // Subtle glow near cursor
+      if (mouse.x > 0 && mouse.x < W) {
+        const grd = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 120);
+        grd.addColorStop(0, 'rgba(139,47,201,0.07)');
+        grd.addColorStop(1, 'rgba(43,77,212,0)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      particles.forEach(p => { p.update(); p.draw(); });
+
+      // Shockwaves
+      for (let i = shockwaves.length - 1; i >= 0; i--) {
+        shockwaves[i].update();
+        shockwaves[i].draw();
+        if (shockwaves[i].done) shockwaves.splice(i, 1);
+      }
+
+      animId = requestAnimationFrame(loop);
+    }
+
+    resize();
+    loop();
+    window.addEventListener('resize', resize);
+
+    // Mouse tracking — only active over hero
+    hero.addEventListener('mousemove', e => {
+      const rect = hero.getBoundingClientRect();
+      const nx = e.clientX - rect.left;
+      const ny = e.clientY - rect.top;
+      mouse.vx = nx - mouse.x;
+      mouse.vy = ny - mouse.y;
+      mouse.x = nx;
+      mouse.y = ny;
+    });
+    hero.addEventListener('mouseleave', () => {
+      mouse.x = -9999; mouse.y = -9999;
+      mouse.vx = 0; mouse.vy = 0;
+    });
+
+    // Click shockwave
+    hero.addEventListener('click', e => {
+      const rect = hero.getBoundingClientRect();
+      shockwaves.push(new Shockwave(e.clientX - rect.left, e.clientY - rect.top));
+    });
+
+    // Touch support
+    hero.addEventListener('touchmove', e => {
+      const rect = hero.getBoundingClientRect();
+      const t = e.touches[0];
+      const nx = t.clientX - rect.left;
+      const ny = t.clientY - rect.top;
+      mouse.vx = nx - mouse.x;
+      mouse.vy = ny - mouse.y;
+      mouse.x = nx; mouse.y = ny;
+    }, { passive: true });
+    hero.addEventListener('touchend', () => { mouse.x = -9999; });
+  })();
+
+  // ── CUSTOM CURSOR ──
+  (function() {
+    const cursor = document.getElementById('custom-cursor');
+    const hero = document.getElementById('hero');
+    if (!cursor || !hero) return;
+    let inside = false;
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top = e.clientY + 'px';
+    });
+    hero.addEventListener('mouseenter', () => {
+      inside = true;
+      cursor.style.opacity = '1';
+      hero.style.cursor = 'none';
+    });
+    hero.addEventListener('mouseleave', () => {
+      inside = false;
+      cursor.style.opacity = '0';
+      hero.style.cursor = '';
+    });
+    hero.addEventListener('mousedown', () => cursor.classList.add('clicking'));
+    document.addEventListener('mouseup', () => cursor.classList.remove('clicking'));
+    cursor.style.opacity = '0';
+  })();
+
+  // ── NEWSLETTER ──
+  function handleSub(e) {
+
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.textContent = 'Subscribed ✓';
+    btn.style.background = 'linear-gradient(135deg,#1e6b3a,#127a45)';
+    e.target.querySelector('input').value = '';
+    setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; }, 3500);
+  }
+</script>
+
+<!-- ── 3D HERO SCENE ── -->
+<script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+  import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+  import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+  import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+  const heroEl = document.getElementById('scene-hero');
+  const canvas3d = document.getElementById('bftk-3d');
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 8);
+
+  const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true, alpha: true });
+  renderer.setClearColor(0x080714, 1);
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(new OutputPass());
+
+  // OrbitControls on heroEl so dragging anywhere in hero orbits the camera
+  const controls = new OrbitControls(camera, heroEl);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.enableZoom    = false;
+  controls.enablePan     = false;
+  controls.minDistance   = 4;
+  controls.maxDistance   = 25;
+  // Disable orbit drag on touch/mobile — also remove pointer events so scroll works
+  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+    controls.enabled = false;
+    heroEl.style.pointerEvents = 'none';
+    canvas3d.style.pointerEvents = 'none';
+  }
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+  const keyLight = new THREE.DirectionalLight(0xffffff, 7);
+  keyLight.position.set(4, 10, 6); scene.add(keyLight);
+  const rimLight = new THREE.DirectionalLight(0x5544ff, 2.5);
+  rimLight.position.set(-6,-5,-2); scene.add(rimLight);
+  const purpleLight = new THREE.PointLight(0x8833ff, 20, 12);
+  purpleLight.position.set(-3, 2, 4); scene.add(purpleLight);
+  const blueLight = new THREE.PointLight(0x3355ff, 16, 12);
+  blueLight.position.set(3,-2,4); scene.add(blueLight);
+
+  // Background ambient stars
+  const bgGeo = new THREE.BufferGeometry();
+  const bgArr = new Float32Array(400*3);
+  for (let i=0;i<bgArr.length;i++) bgArr[i]=(Math.random()-0.5)*22;
+  bgGeo.setAttribute('position',new THREE.BufferAttribute(bgArr,3));
+  const bgMat = new THREE.PointsMaterial({color:0xc8a96e,size:0.035,transparent:true,opacity:0.5});
+  scene.add(new THREE.Points(bgGeo, bgMat));
+
+  // Logo particle shader
+  const logoParticleVert = `
+    attribute vec3  aSeedPos;
+    attribute vec3  aVelocity;
+    attribute float aPhase;
+    attribute float aDelay;
+    attribute float aSize;
+    uniform float uDissolve;
+    uniform float uTime;
+    varying float vDep;
+    varying float vAlpha;
+    void main(){
+      float dep = clamp((uDissolve - aDelay) / max(0.001, 1.0 - aDelay), 0.0, 1.0);
+      vDep = dep;
+      vec3 pos = aSeedPos;
+      float t  = uTime * 0.45;
+      if(uDissolve < 0.01){
+        gl_Position  = vec4(1e9, 0.0, 0.0, 1.0);
+        gl_PointSize = 0.0; vAlpha = 0.0; vDep = 0.0; return;
+      }
+      if(dep > 0.0){
+        pos += aVelocity * dep * 3.0;
+        pos.y += dep * dep * 4.5;
+        pos.x += sin(aPhase + t*1.4) * dep * 1.0;
+        pos.y += sin(aPhase*2.1 + t*0.8) * dep * 0.5;
+        pos.z += cos(aPhase*1.6 + t*1.1) * dep * 0.8;
+        pos.x += cos(aPhase*0.9 + t*0.6) * dep * dep * 0.6;
+      }
+      vAlpha = smoothstep(1.0, 0.0, dep * 1.1);
+      float sz = aSize * mix(1.0, 0.4, dep);
+      vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
+      gl_Position  = projectionMatrix * mvPos;
+      gl_PointSize = sz * (18.0 / -mvPos.z);
+    }
+  `;
+  const logoParticleFrag = `
+    varying float vDep;
+    varying float vAlpha;
+    void main(){
+      float d = length(gl_PointCoord - 0.5) * 2.0;
+      float circle = smoothstep(1.0, 0.5, d);
+      if(circle * vAlpha < 0.01) discard;
+      vec3 col = mix(vec3(0.55, 0.42, 0.78), vec3(0.72, 0.65, 0.52), vDep);
+      gl_FragColor = vec4(col, circle * vAlpha * 0.75);
+    }
+  `;
+  const logoParticleMat = new THREE.ShaderMaterial({
+    uniforms: { uDissolve:{value:0.0}, uTime:{value:0.0} },
+    vertexShader: logoParticleVert, fragmentShader: logoParticleFrag,
+    transparent: true, depthWrite: false,
+  });
+
+  const group = new THREE.Group();
+  scene.add(group);
+  const logoMaterials = [];
+
+  const loader = new GLTFLoader();
+  loader.load('3dsvg.glb', (gltf) => {
+    const model = gltf.scene;
+    const box   = new THREE.Box3().setFromObject(model);
+    const ctr   = box.getCenter(new THREE.Vector3());
+    const size  = box.getSize(new THREE.Vector3());
+    const scale = 3.5 / Math.max(size.x, size.y, size.z);
+    model.scale.setScalar(scale);
+    model.position.sub(ctr.multiplyScalar(scale));
+    model.updateMatrixWorld(true);
+
+    const pts = [];
+    const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3();
+    model.traverse((child) => {
+      if (!child.isMesh) return;
+      child.material = new THREE.MeshStandardMaterial({
+        color: 0x7744dd, emissive: 0x4422aa, emissiveIntensity: 0.6,
+        metalness: 0.3, roughness: 0.4, side: THREE.DoubleSide,
+        transparent: true, opacity: 1.0,
+        depthWrite: true, polygonOffset: true,
+        polygonOffsetFactor: -1, polygonOffsetUnits: -1,
+      });
+      logoMaterials.push(child.material);
+      const geo = child.geometry, pos = geo.getAttribute('position');
+      const idx = geo.index, mat = child.matrixWorld;
+      const sample = (ia, ib, ic) => {
+        tmpA.fromBufferAttribute(pos, ia).applyMatrix4(mat);
+        tmpB.fromBufferAttribute(pos, ib).applyMatrix4(mat);
+        tmpC.fromBufferAttribute(pos, ic).applyMatrix4(mat);
+        for (let s=0; s<3; s++) {
+          let r1=Math.random(), r2=Math.random();
+          if(r1+r2>1){r1=1-r1;r2=1-r2;}
+          const r3=1-r1-r2;
+          pts.push(tmpA.x*r1+tmpB.x*r2+tmpC.x*r3,
+                   tmpA.y*r1+tmpB.y*r2+tmpC.y*r3,
+                   tmpA.z*r1+tmpB.z*r2+tmpC.z*r3);
+        }
+      };
+      if(idx){ for(let i=0;i<idx.count;i+=3) sample(idx.getX(i),idx.getX(i+1),idx.getX(i+2)); }
+      else   { for(let i=0;i<pos.count;i+=3) sample(i,i+1,i+2); }
+    });
+    group.add(model);
+
+    const TARGET=6000, step=Math.max(1,Math.floor(pts.length/3/TARGET));
+    const seeds=[];
+    for(let i=0;i<pts.length/3&&seeds.length/3<TARGET;i+=step)
+      seeds.push(pts[i*3],pts[i*3+1],pts[i*3+2]);
+    const count=seeds.length/3;
+    const aSeedPos=new Float32Array(seeds), aVelocity=new Float32Array(count*3);
+    const aPhase=new Float32Array(count), aDelay=new Float32Array(count), aSize=new Float32Array(count);
+    for(let i=0;i<count;i++){
+      aVelocity[i*3+0]=(Math.random()-0.5)*2.0;
+      aVelocity[i*3+1]=Math.random()*1.2+0.2;
+      aVelocity[i*3+2]=(Math.random()-0.5)*1.5;
+      aPhase[i]=Math.random()*Math.PI*2;
+      aDelay[i]=Math.random()*0.35;
+      aSize[i]=1.5+Math.random()*2.5;
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(aSeedPos.slice(),3));
+    geo.setAttribute('aSeedPos', new THREE.BufferAttribute(aSeedPos,3));
+    geo.setAttribute('aVelocity',new THREE.BufferAttribute(aVelocity,3));
+    geo.setAttribute('aPhase',   new THREE.BufferAttribute(aPhase,1));
+    geo.setAttribute('aDelay',   new THREE.BufferAttribute(aDelay,1));
+    geo.setAttribute('aSize',    new THREE.BufferAttribute(aSize,1));
+    group.add(new THREE.Points(geo, logoParticleMat));
+  });
+
+  // Photo planes
+  const photoVert = `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
+  const photoFrag = `
+    uniform sampler2D map; uniform float opacity; varying vec2 vUv;
+    void main(){
+      vec4 t=texture2D(map,vUv);
+      vec2 c=vUv*2.0-1.0;
+      float vig=smoothstep(1.05,0.42,length(c*vec2(0.88,1.0)));
+      gl_FragColor=vec4(t.rgb, t.a*vig*opacity);
+    }
+  `;
+  const photoFiles = [
+    'images/3d-cochren.jpg','images/3d-manic.jpg','images/3d-jjweeks.jpg','images/3d-journey.jpg',
+    'images/3d-trampolines.jpg','images/3d-presence.jpg','images/3d-river.jpg','images/3d-emmanuel.jpg',
+    'images/3d-vertical.jpg','images/3d-weareleo.jpg','images/3d-youngescape.jpg','images/3d-fulton.jpg',
+    'images/3d-trampolines2.jpg','images/3d-jjweeks2.jpg',
+  ];
+  const RADIUS=6.0, NP=photoFiles.length;
+  const heights=[ 1.5,-1.8, 2.5,-0.5, 1.0,-2.2, 0.0, 2.0,-1.2, 1.8,-2.5, 0.5,-0.8, 2.2];
+  const phases =[ 0.0, 1.3, 2.6, 0.8, 3.5, 1.9, 4.2, 0.5, 2.1, 3.8, 1.1, 2.9, 0.3, 3.2];
+  const offsets=[ 0.0,0.08,0.14,0.04,0.20,0.10,0.17,0.03,0.12,0.06,0.22,0.16,0.09,0.19];
+  const START=25*Math.PI/180, STEP=(Math.PI*2)/NP;
+  const photoMeshes=[], texLoader=new THREE.TextureLoader();
+  photoFiles.forEach((file,i)=>{
+    const mat=new THREE.ShaderMaterial({
+      uniforms:{map:{value:null},opacity:{value:0}},
+      vertexShader:photoVert, fragmentShader:photoFrag,
+      transparent:true, depthWrite:false, depthTest:false,
+    });
+    const a=START+STEP*i;
+    const mesh=new THREE.Mesh(new THREE.PlaneGeometry(3.4,2.4),mat);
+    mesh.position.set(Math.sin(a)*RADIUS,heights[i],Math.cos(a)*RADIUS);
+    mesh.userData.baseY=heights[i]; mesh.userData.phase=phases[i]; mesh.userData.offset=offsets[i];
+    scene.add(mesh); photoMeshes.push(mesh);
+    texLoader.load(file,(tex)=>{
+      mat.uniforms.map.value=tex;
+      const target=0.78, fi=()=>{
+        mat.uniforms.opacity.value=Math.min(mat.uniforms.opacity.value+0.007,target);
+        if(mat.uniforms.opacity.value<target) requestAnimationFrame(fi);
+      };
+      setTimeout(fi,i*150);
+    });
+  });
+
+  // Photo particle systems
+  const photoParticleVert = `
+    attribute vec3 aSeedPos; attribute vec3 aVelocity; attribute float aPhase; attribute float aDelay;
+    uniform float uDissolve; uniform float uTime; varying float vAlpha;
+    void main(){
+      float dep=clamp((uDissolve-aDelay)/max(0.001,1.0-aDelay),0.0,1.0);
+      vec3 pos=aSeedPos; float t=uTime*0.45;
+      if(dep>0.0){ pos+=aVelocity*dep*2.5; pos.y+=dep*dep*3.5;
+        pos.x+=sin(aPhase+t*1.3)*dep*0.7; pos.z+=cos(aPhase*1.4+t)*dep*0.5; }
+      vAlpha=smoothstep(1.0,0.0,dep*1.2);
+      vec4 mv=modelViewMatrix*vec4(pos,1.0);
+      gl_Position=projectionMatrix*mv;
+      gl_PointSize=(0.5+(1.0-dep)*0.5)*(22.0/-mv.z);
+    }
+  `;
+  const photoParticleFrag = `
+    varying float vAlpha;
+    void main(){
+      float d=length(gl_PointCoord-0.5)*2.0;
+      float a=smoothstep(1.0,0.5,d)*vAlpha*0.65;
+      if(a<0.01) discard;
+      gl_FragColor=vec4(0.78,0.72,0.62,a);
+    }
+  `;
+  const photoParticleSystems = photoMeshes.map((mesh,i)=>{
+    const COUNT=300, W=3.4, H=2.4;
+    const angle=START+STEP*i;
+    const cx=Math.sin(angle)*RADIUS, cy=heights[i], cz=Math.cos(angle)*RADIUS;
+    const sp=new Float32Array(COUNT*3), vel=new Float32Array(COUNT*3);
+    const ph=new Float32Array(COUNT), dl=new Float32Array(COUNT);
+    for(let j=0;j<COUNT;j++){
+      sp[j*3+0]=cx+(Math.random()-0.5)*W; sp[j*3+1]=cy+(Math.random()-0.5)*H; sp[j*3+2]=cz+(Math.random()-0.5)*0.1;
+      vel[j*3+0]=(Math.random()-0.5)*1.5; vel[j*3+1]=Math.random()*1.0+0.3; vel[j*3+2]=(Math.random()-0.5)*1.0;
+      ph[j]=Math.random()*Math.PI*2; dl[j]=offsets[i]+Math.random()*0.25;
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.BufferAttribute(sp.slice(),3));
+    geo.setAttribute('aSeedPos',new THREE.BufferAttribute(sp,3));
+    geo.setAttribute('aVelocity',new THREE.BufferAttribute(vel,3));
+    geo.setAttribute('aPhase',new THREE.BufferAttribute(ph,1));
+    geo.setAttribute('aDelay',new THREE.BufferAttribute(dl,1));
+    const mat=new THREE.ShaderMaterial({
+      uniforms:{uDissolve:{value:0},uTime:{value:0}},
+      vertexShader:photoParticleVert, fragmentShader:photoParticleFrag,
+      transparent:true, depthWrite:false,
+    });
+    scene.add(new THREE.Points(geo,mat));
+    return {mat};
+  });
+
+  // Bible verse letter system
+  const verses=[
+    {ref:'Ephesians 5:19', text:'Speaking to one another with psalms, hymns, and songs from the Spirit. Sing and make music from your heart to the Lord.'},
+    {ref:'Psalm 150:6',    text:'Let everything that has breath praise the Lord. Praise the Lord.'},
+    {ref:'Psalm 95:1',     text:'Come, let us sing for joy to the Lord; let us shout aloud to the Rock of our salvation.'},
+    {ref:'Psalm 100:1-2',  text:'Shout for joy to the Lord, all the earth. Worship the Lord with gladness; come before him with joyful songs.'},
+    {ref:'Colossians 3:16',text:'Let the message of Christ dwell among you richly as you teach and admonish one another with all wisdom through psalms, hymns, and songs from the Spirit.'},
+    {ref:'Psalm 34:1',     text:'I will extol the Lord at all times; his praise will always be on my lips.'},
+    {ref:'Hebrews 13:15',  text:'Through Jesus, let us continually offer to God a sacrifice of praise — the fruit of lips that openly profess his name.'},
+    {ref:'Revelation 5:12',text:'Worthy is the Lamb, who was slain, to receive power and wealth and wisdom and strength and honor and glory and praise!'},
+    {ref:'Psalm 47:1',     text:'Clap your hands, all you nations; shout to God with cries of joy.'},
+    {ref:'Zephaniah 3:17', text:'The Lord your God is with you, the Mighty Warrior who saves. He will rejoice over you with singing.'},
+  ];
+
+  const ATLAS_COLS=16, ATLAS_ROWS=7, ATLAS_CW=52, ATLAS_CH=64;
+  const PRINTABLE=' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~—';
+  const FONT_PX=Math.floor(ATLAS_CH*0.70);
+  const atlasEl=document.createElement('canvas');
+  atlasEl.width=ATLAS_COLS*ATLAS_CW; atlasEl.height=ATLAS_ROWS*ATLAS_CH;
+  const aCtx=atlasEl.getContext('2d');
+  aCtx.clearRect(0,0,atlasEl.width,atlasEl.height);
+  aCtx.font=`bold ${FONT_PX}px Georgia,serif`;
+  aCtx.textAlign='center'; aCtx.textBaseline='middle';
+  const charMap={}, charPW={};
+  PRINTABLE.split('').forEach((c,i)=>{
+    charMap[c]=i; charPW[c]=aCtx.measureText(c).width;
+    const col=i%ATLAS_COLS, row=Math.floor(i/ATLAS_COLS);
+    aCtx.fillStyle='rgba(255,255,255,0.95)';
+    aCtx.fillText(c, col*ATLAS_CW+ATLAS_CW/2, row*ATLAS_CH+ATLAS_CH/2);
+  });
+  const atlasTex=new THREE.CanvasTexture(atlasEl);
+
+  function charUV(c){
+    const i=charMap[c]??charMap[' ']??0;
+    const col=i%ATLAS_COLS, row=Math.floor(i/ATLAS_COLS);
+    const pw=charPW[c]??ATLAS_CW;
+    const pad=Math.max(0,(ATLAS_CW-pw)*0.5);
+    const aw=ATLAS_COLS*ATLAS_CW;
+    const u0=(col*ATLAS_CW+pad)/aw, u1=((col+1)*ATLAS_CW-pad)/aw;
+    return [u0, 1-(row+1)/ATLAS_ROWS, u1, 1-row/ATLAS_ROWS];
+  }
+
+  const CH=0.22, LH=0.30, GAP=0.006, MAX_LINE_W=3.2;
+  const WPX=CH/FONT_PX;
+  const charW={};
+  PRINTABLE.split('').forEach(c=>{ charW[c]=charPW[c]*WPX; });
+  function strW(str){ let w=0; for(const c of str) w+=(charW[c]??CH)+GAP; return w-GAP; }
+  function wrap(text){
+    const words=text.split(' '), lines=[]; let line='';
+    for(const w of words){ const test=line?line+' '+w:w; if(strW(test)>MAX_LINE_W&&line){lines.push(line);line=w;}else line=test; }
+    if(line) lines.push(line); return lines;
+  }
+
+  const V_RADIUS=6.5;
+  const verseAH=[
+    [Math.PI*0.0,4.2],[Math.PI*0.2,-3.8],[Math.PI*0.4,4.6],[Math.PI*0.6,-4.2],
+    [Math.PI*0.8,3.9],[Math.PI*1.0,-4.6],[Math.PI*1.2,4.4],[Math.PI*1.4,-3.6],
+    [Math.PI*1.6,3.7],[Math.PI*1.8,-4.4],
+  ];
+  const posArr=[],uvArr=[],colArr=[],idxArr=[],seedArr=[],velArr=[],phArr=[],dlArr=[],cornerArr=[];
+  let letterVtx=0;
+  function addQuad(ax,ay,az,vx,vy,cw,c,delay,speed,r,g,b){
+    if(!(c in charMap)) return;
+    const [u0,v0,u1,v1]=charUV(c);
+    const sx=(Math.random()-0.5)*2.6, sy=0.5+Math.random()*2.0, sz=(Math.random()-0.5)*2.2;
+    const ph=Math.random()*Math.PI*2, base=letterVtx;
+    [[vx-cw/2,vy-CH/2,u0,v0],[vx+cw/2,vy-CH/2,u1,v0],
+     [vx+cw/2,vy+CH/2,u1,v1],[vx-cw/2,vy+CH/2,u0,v1]].forEach(([kx,ky,u,v])=>{
+      posArr.push(ax,ay,az); uvArr.push(u,v); colArr.push(r,g,b);
+      cornerArr.push(kx,ky); seedArr.push(ax,ay,az);
+      velArr.push(sx*speed,sy*speed,sz*speed); phArr.push(ph); dlArr.push(delay); letterVtx++;
+    });
+    idxArr.push(base,base+1,base+2,base,base+2,base+3);
+  }
+  verses.forEach((verse,vi)=>{
+    const [angle,anchorY]=verseAH[vi];
+    const ax=Math.sin(angle)*V_RADIUS, az=Math.cos(angle)*V_RADIUS;
+    const dBase=0.02+vi*0.022, refY=LH*1.1;
+    const rW=strW(verse.ref); let rCursor=-rW/2;
+    verse.ref.split('').forEach((c,ci)=>{
+      const cw=charW[c]??CH;
+      addQuad(ax,anchorY,az,rCursor+cw/2,refY,cw,c,dBase+ci*0.005+Math.random()*0.02,3.0,0.88,0.74,0.42);
+      rCursor+=cw+GAP;
+    });
+    const bodyStartY=refY-LH*1.6;
+    wrap(verse.text).forEach((ln,li)=>{
+      const lw=strW(ln); let cursor=-lw/2;
+      ln.split('').forEach((c,ci)=>{
+        const cw=charW[c]??CH;
+        addQuad(ax,anchorY,az,cursor+cw/2,bodyStartY-li*LH,cw,c,dBase+(li*12+ci)*0.0022+Math.random()*0.015,2.4,0.92,0.90,0.95);
+        cursor+=cw+GAP;
+      });
+    });
+  });
+
+  const letterVert=`
+    attribute vec3 aSeedPos; attribute vec3 aVelocity; attribute float aPhase; attribute float aDelay;
+    attribute vec2 aCorner; attribute vec3 aColor;
+    uniform float uDissolve; uniform float uTime; uniform float uOpacity;
+    varying vec2 vUv; varying float vAlpha; varying vec3 vColor;
+    void main(){
+      vUv=uv; vColor=aColor;
+      float dep=clamp((uDissolve-aDelay)/max(0.001,1.0-aDelay),0.0,1.0);
+      vec3 pos=aSeedPos;
+      if(dep>0.0){ float t=uTime*0.5;
+        pos+=aVelocity*dep*3.8; pos.y+=dep*dep*4.5;
+        pos.x+=sin(aPhase+t*1.3)*dep*1.0; pos.z+=cos(aPhase*1.4+t*1.0)*dep*0.8; }
+      vec4 mv=modelViewMatrix*vec4(pos,1.0);
+      mv.x+=aCorner.x; mv.y+=aCorner.y;
+      gl_Position=projectionMatrix*mv;
+      vAlpha=smoothstep(1.0,0.2,dep)*uOpacity;
+    }
+  `;
+  const letterFrag=`
+    uniform sampler2D uAtlas; varying vec2 vUv; varying float vAlpha; varying vec3 vColor;
+    void main(){ float a=texture2D(uAtlas,vUv).a*vAlpha; if(a<0.012) discard; gl_FragColor=vec4(vColor,a); }
+  `;
+  const letterGeo=new THREE.BufferGeometry();
+  letterGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(posArr),3));
+  letterGeo.setAttribute('uv',       new THREE.BufferAttribute(new Float32Array(uvArr),2));
+  letterGeo.setAttribute('aColor',   new THREE.BufferAttribute(new Float32Array(colArr),3));
+  letterGeo.setAttribute('aSeedPos', new THREE.BufferAttribute(new Float32Array(seedArr),3));
+  letterGeo.setAttribute('aVelocity',new THREE.BufferAttribute(new Float32Array(velArr),3));
+  letterGeo.setAttribute('aPhase',   new THREE.BufferAttribute(new Float32Array(phArr),1));
+  letterGeo.setAttribute('aDelay',   new THREE.BufferAttribute(new Float32Array(dlArr),1));
+  letterGeo.setAttribute('aCorner',  new THREE.BufferAttribute(new Float32Array(cornerArr),2));
+  letterGeo.setIndex(idxArr);
+  const letterMat=new THREE.ShaderMaterial({
+    uniforms:{uDissolve:{value:0},uTime:{value:0},uOpacity:{value:0},uAtlas:{value:atlasTex}},
+    vertexShader:letterVert, fragmentShader:letterFrag,
+    transparent:true, depthWrite:false, side:THREE.DoubleSide,
+  });
+  const letterMesh=new THREE.Mesh(letterGeo,letterMat);
+  scene.add(letterMesh);
+  setTimeout(()=>{
+    const fadeIn=()=>{
+      letterMat.uniforms.uOpacity.value=Math.min(letterMat.uniforms.uOpacity.value+0.004,0.88);
+      if(letterMat.uniforms.uOpacity.value<0.88) requestAnimationFrame(fadeIn);
+    };
+    fadeIn();
+  },600);
+
+  // Dissolve driven by scroll position instead of wheel
+  let dissolveTarget=0, dissolveCurrent=0;
+  window.addEventListener('scroll',()=>{
+    const heroH=heroEl.offsetHeight;
+    dissolveTarget=Math.min(1, window.scrollY/(heroH*0.7));
+  },{passive:true});
+
+  // Animate
+  const clock=new THREE.Clock();
+  let logoRotY=0, lastT=0;
+  function animate(){
+    requestAnimationFrame(animate);
+    const t=clock.getElapsedTime();
+    dissolveCurrent+=(dissolveTarget-dissolveCurrent)*0.04;
+    const d=dissolveCurrent;
+
+    const meshOpacity=Math.max(0,1.0-d*5.0);
+    logoMaterials.forEach(m=>{ m.opacity=meshOpacity; });
+    logoParticleMat.uniforms.uDissolve.value=d;
+    logoParticleMat.uniforms.uTime.value=t;
+    group.position.y=d*0.4;
+    bgMat.opacity=0.5*(1-d);
+
+    photoMeshes.forEach((mesh)=>{
+      const off=mesh.userData.offset;
+      const ld=Math.max(0,Math.min(1,(d-off)/(1-off)));
+      mesh.material.uniforms.opacity.value=Math.max(0,(1-ld*5)*0.78);
+      mesh.lookAt(camera.position);
+      mesh.position.y=mesh.userData.baseY+Math.sin(t*0.4+mesh.userData.phase)*0.18;
+    });
+    photoParticleSystems.forEach(({mat})=>{ mat.uniforms.uDissolve.value=d; mat.uniforms.uTime.value=t; });
+    letterMesh.material.uniforms.uDissolve.value=d;
+    letterMesh.material.uniforms.uTime.value=t;
+
+    logoRotY+=(t-lastT)*0.35; lastT=t;
+    group.rotation.y=logoRotY;
+    purpleLight.intensity=18+Math.sin(t*1.1)*4;
+    blueLight.intensity  =14+Math.cos(t*0.8)*3;
+    controls.update();
+    composer.render();
+  }
+  animate();
+
+  window.addEventListener('resize',()=>{
+    camera.aspect=innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);
+    composer.setSize(innerWidth,innerHeight);
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BFTK — 3D Logo Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #080714; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <script type="importmap">
+    { "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    } }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+    // ── Scene ─────────────────────────────────────────────────────────────────
+    const scene  = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 8);
+
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+    renderer.setClearColor(0x080714, 1);
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    composer.addPass(new OutputPass());
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom    = false;
+    controls.minDistance   = 4;
+    controls.maxDistance   = 25;
+
+    // ── Lights ────────────────────────────────────────────────────────────────
+    scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 7);
+    keyLight.position.set(4, 10, 6); scene.add(keyLight);
+    const rimLight = new THREE.DirectionalLight(0x5544ff, 2.5);
+    rimLight.position.set(-6,-5,-2); scene.add(rimLight);
+    const purpleLight = new THREE.PointLight(0x8833ff, 20, 12);
+    purpleLight.position.set(-3, 2, 4); scene.add(purpleLight);
+    const blueLight = new THREE.PointLight(0x3355ff, 16, 12);
+    blueLight.position.set(3,-2,4); scene.add(blueLight);
+
+    // ── Background ambient particles ──────────────────────────────────────────
+    const bgGeo = new THREE.BufferGeometry();
+    const bgArr = new Float32Array(400*3);
+    for (let i=0;i<bgArr.length;i++) bgArr[i]=(Math.random()-0.5)*22;
+    bgGeo.setAttribute('position',new THREE.BufferAttribute(bgArr,3));
+    const bgMat = new THREE.PointsMaterial({color:0xc8a96e,size:0.035,transparent:true,opacity:0.5});
+    scene.add(new THREE.Points(bgGeo, bgMat));
+
+    // ── Logo particle shader ───────────────────────────────────────────────────
+    // Particles seed at logo surface positions. At dissolve=0 they form the logo.
+    // As dissolve increases they burst outward, rise, and scatter.
+    const logoParticleVert = `
+      attribute vec3  aSeedPos;
+      attribute vec3  aVelocity;
+      attribute float aPhase;
+      attribute float aDelay;
+      attribute float aSize;
+
+      uniform float uDissolve;
+      uniform float uTime;
+
+      varying float vDep;
+      varying float vAlpha;
+
+      void main(){
+        // Departure: 0 = in logo formation, 1 = fully scattered
+        float dep = clamp((uDissolve - aDelay) / max(0.001, 1.0 - aDelay), 0.0, 1.0);
+        vDep = dep;
+
+        vec3 pos = aSeedPos;
+        float t  = uTime * 0.45;
+
+        // Hide entirely until dissolve starts
+        if(uDissolve < 0.01){
+          gl_Position  = vec4(1e9, 0.0, 0.0, 1.0);
+          gl_PointSize = 0.0;
+          vAlpha = 0.0;
+          vDep   = 0.0;
+          return;
+        }
+
+        if(dep > 0.0){
+          // Outward burst from seed
+          pos += aVelocity * dep * 3.0;
+          // Upward lift (accelerates)
+          pos.y += dep * dep * 4.5;
+          // Organic turbulence — breaks the rigid shape
+          pos.x += sin(aPhase        + t*1.4) * dep * 1.0;
+          pos.y += sin(aPhase*2.1    + t*0.8) * dep * 0.5;
+          pos.z += cos(aPhase*1.6    + t*1.1) * dep * 0.8;
+          pos.x += cos(aPhase*0.9    + t*0.6) * dep * dep * 0.6;
+        }
+
+        // Alpha: glows at full intensity in formation, fades as it disperses far
+        vAlpha = smoothstep(1.0, 0.0, dep * 1.1);
+
+        float sz = aSize * mix(1.0, 0.4, dep);
+        vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
+        gl_Position  = projectionMatrix * mvPos;
+        gl_PointSize = sz * (18.0 / -mvPos.z);
+      }
+    `;
+
+    const logoParticleFrag = `
+      varying float vDep;
+      varying float vAlpha;
+
+      void main(){
+        float d = length(gl_PointCoord - 0.5) * 2.0;
+        float circle = smoothstep(1.0, 0.5, d);
+        if(circle * vAlpha < 0.01) discard;
+        // Flat matte dust — muted violet shifting to warm sand as it disperses
+        vec3 col = mix(vec3(0.55, 0.42, 0.78), vec3(0.72, 0.65, 0.52), vDep);
+        gl_FragColor = vec4(col, circle * vAlpha * 0.75);
+      }
+    `;
+
+    const logoParticleMat = new THREE.ShaderMaterial({
+      uniforms: { uDissolve:{value:0.0}, uTime:{value:0.0} },
+      vertexShader:   logoParticleVert,
+      fragmentShader: logoParticleFrag,
+      transparent: true,
+      depthWrite:  false,
+    });
+
+    // ── Logo mesh + particle system (built after GLB loads) ───────────────────
+    const group = new THREE.Group();
+    scene.add(group);
+    const logoMaterials = [];
+    let   logoParticles = null;
+
+    const loader = new GLTFLoader();
+    loader.load('3dsvg.glb', (gltf) => {
+      const model = gltf.scene;
+
+      // Scale/centre model
+      const box   = new THREE.Box3().setFromObject(model);
+      const ctr   = box.getCenter(new THREE.Vector3());
+      const size  = box.getSize(new THREE.Vector3());
+      const scale = 3.5 / Math.max(size.x, size.y, size.z);
+      model.scale.setScalar(scale);
+      model.position.sub(ctr.multiplyScalar(scale));
+      model.updateMatrixWorld(true);
+
+      // Collect surface sample points from every mesh triangle
+      const pts = [];
+      const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3();
+
+      model.traverse((child) => {
+        if (!child.isMesh) return;
+        child.castShadow = true;
+        child.material = new THREE.MeshStandardMaterial({
+          color: 0x7744dd, emissive: 0x4422aa, emissiveIntensity: 0.6,
+          metalness: 0.3, roughness: 0.4, side: THREE.DoubleSide,
+          transparent: true, opacity: 1.0,
+          depthWrite: true, polygonOffset: true,
+          polygonOffsetFactor: -1, polygonOffsetUnits: -1,
+        });
+        logoMaterials.push(child.material);
+
+        const geo  = child.geometry;
+        const pos  = geo.getAttribute('position');
+        const idx  = geo.index;
+        const mat  = child.matrixWorld;
+        const SAMPLES_PER_TRI = 3;
+
+        const sample = (ia, ib, ic) => {
+          tmpA.fromBufferAttribute(pos, ia).applyMatrix4(mat);
+          tmpB.fromBufferAttribute(pos, ib).applyMatrix4(mat);
+          tmpC.fromBufferAttribute(pos, ic).applyMatrix4(mat);
+          for (let s = 0; s < SAMPLES_PER_TRI; s++) {
+            let r1 = Math.random(), r2 = Math.random();
+            if (r1+r2 > 1){ r1=1-r1; r2=1-r2; }
+            const r3 = 1-r1-r2;
+            pts.push(tmpA.x*r1+tmpB.x*r2+tmpC.x*r3,
+                     tmpA.y*r1+tmpB.y*r2+tmpC.y*r3,
+                     tmpA.z*r1+tmpB.z*r2+tmpC.z*r3);
+          }
+        };
+
+        if (idx) {
+          for (let i=0; i<idx.count; i+=3) sample(idx.getX(i),idx.getX(i+1),idx.getX(i+2));
+        } else {
+          for (let i=0; i<pos.count; i+=3) sample(i, i+1, i+2);
+        }
+      });
+
+      group.add(model);
+
+      // ── Build logo particle BufferGeometry from surface samples ────────────
+      const TARGET = 6000;
+      const N = Math.min(pts.length/3, TARGET);
+      // Subsample if we have too many, or use all if fewer
+      const step  = Math.max(1, Math.floor(pts.length/3 / N));
+      const seeds  = []; // [x,y,z, ...]
+      for (let i=0; i<pts.length/3 && seeds.length/3<N; i+=step){
+        seeds.push(pts[i*3], pts[i*3+1], pts[i*3+2]);
+      }
+
+      const count = seeds.length/3;
+      const aSeedPos  = new Float32Array(seeds);
+      const aVelocity = new Float32Array(count*3);
+      const aPhase    = new Float32Array(count);
+      const aDelay    = new Float32Array(count);
+      const aSize     = new Float32Array(count);
+
+      for (let i=0; i<count; i++){
+        // Mostly outward/upward velocity — varies per particle
+        aVelocity[i*3+0] = (Math.random()-0.5) * 2.0;
+        aVelocity[i*3+1] = Math.random() * 1.2 + 0.2;
+        aVelocity[i*3+2] = (Math.random()-0.5) * 1.5;
+        aPhase[i]  = Math.random() * Math.PI * 2;
+        aDelay[i]  = Math.random() * 0.35;  // stagger: not all leave at once
+        aSize[i]   = 1.5 + Math.random() * 2.5;
+      }
+
+      // Dummy position attr required by BufferGeometry (actual pos computed in shader)
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position',  new THREE.BufferAttribute(aSeedPos.slice(), 3));
+      geo.setAttribute('aSeedPos',  new THREE.BufferAttribute(aSeedPos,  3));
+      geo.setAttribute('aVelocity', new THREE.BufferAttribute(aVelocity, 3));
+      geo.setAttribute('aPhase',    new THREE.BufferAttribute(aPhase,    1));
+      geo.setAttribute('aDelay',    new THREE.BufferAttribute(aDelay,    1));
+      geo.setAttribute('aSize',     new THREE.BufferAttribute(aSize,     1));
+
+      logoParticles = new THREE.Points(geo, logoParticleMat);
+      group.add(logoParticles);
+    });
+
+    // ── Photo planes ──────────────────────────────────────────────────────────
+    const photoVert = `
+      varying vec2 vUv;
+      void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }
+    `;
+    const photoFrag = `
+      uniform sampler2D map; uniform float opacity;
+      varying vec2 vUv;
+      void main(){
+        vec4 t=texture2D(map,vUv);
+        vec2 c=vUv*2.0-1.0;
+        float vig=smoothstep(1.05,0.42,length(c*vec2(0.88,1.0)));
+        gl_FragColor=vec4(t.rgb, t.a*vig*opacity);
+      }
+    `;
+    const photoFiles = [
+      'images/3d-cochren.jpg',    'images/3d-manic.jpg',
+      'images/3d-jjweeks.jpg',    'images/3d-journey.jpg',
+      'images/3d-trampolines.jpg','images/3d-presence.jpg',
+      'images/3d-river.jpg',      'images/3d-emmanuel.jpg',
+      'images/3d-vertical.jpg',   'images/3d-weareleo.jpg',
+      'images/3d-youngescape.jpg','images/3d-fulton.jpg',
+      'images/3d-trampolines2.jpg','images/3d-jjweeks2.jpg',
+    ];
+    const RADIUS=6.0, N=photoFiles.length;
+    const heights=[ 1.5,-1.8, 2.5,-0.5, 1.0,-2.2, 0.0, 2.0,-1.2, 1.8,-2.5, 0.5,-0.8, 2.2];
+    const phases =[ 0.0, 1.3, 2.6, 0.8, 3.5, 1.9, 4.2, 0.5, 2.1, 3.8, 1.1, 2.9, 0.3, 3.2];
+    const offsets=[ 0.0,0.08,0.14,0.04,0.20,0.10,0.17,0.03,0.12,0.06,0.22,0.16,0.09,0.19];
+    const START=25*Math.PI/180, STEP=(Math.PI*2)/N;
+
+    const photoMeshes=[], texLoader=new THREE.TextureLoader();
+    photoFiles.forEach((file,i)=>{
+      const mat=new THREE.ShaderMaterial({
+        uniforms:{map:{value:null},opacity:{value:0}},
+        vertexShader:photoVert, fragmentShader:photoFrag,
+        transparent:true, depthWrite:false, depthTest:false,
+      });
+      const a=START+STEP*i;
+      const mesh=new THREE.Mesh(new THREE.PlaneGeometry(3.4,2.4),mat);
+      mesh.position.set(Math.sin(a)*RADIUS,heights[i],Math.cos(a)*RADIUS);
+      mesh.userData.baseY=heights[i]; mesh.userData.phase=phases[i]; mesh.userData.offset=offsets[i];
+      scene.add(mesh); photoMeshes.push(mesh);
+      texLoader.load(file,(tex)=>{
+        mat.uniforms.map.value=tex;
+        const target=0.78, fi=()=>{
+          mat.uniforms.opacity.value=Math.min(mat.uniforms.opacity.value+0.007,target);
+          if(mat.uniforms.opacity.value<target) requestAnimationFrame(fi);
+        };
+        setTimeout(fi,i*150);
+      });
+    });
+
+    // ── Photo particle systems (one per photo, scatter on dissolve) ───────────
+    const photoParticleVert = `
+      attribute vec3  aSeedPos;
+      attribute vec3  aVelocity;
+      attribute float aPhase;
+      attribute float aDelay;
+
+      uniform float uDissolve;
+      uniform float uTime;
+      varying float vAlpha;
+
+      void main(){
+        float dep = clamp((uDissolve - aDelay) / max(0.001, 1.0 - aDelay), 0.0, 1.0);
+        vec3 pos  = aSeedPos;
+        float t   = uTime * 0.45;
+        if(dep > 0.0){
+          pos += aVelocity * dep * 2.5;
+          pos.y += dep*dep*3.5;
+          pos.x += sin(aPhase + t*1.3) * dep * 0.7;
+          pos.z += cos(aPhase*1.4 + t) * dep * 0.5;
+        }
+        vAlpha = smoothstep(1.0, 0.0, dep * 1.2);
+        vec4 mv = modelViewMatrix * vec4(pos,1.0);
+        gl_Position  = projectionMatrix * mv;
+        gl_PointSize = (0.5 + (1.0-dep)*0.5) * (22.0 / -mv.z);
+      }
+    `;
+    const photoParticleFrag = `
+      varying float vAlpha;
+      void main(){
+        float d = length(gl_PointCoord-0.5)*2.0;
+        float circle = smoothstep(1.0, 0.5, d);
+        float a = circle * vAlpha * 0.65;
+        if(a<0.01) discard;
+        gl_FragColor = vec4(0.78, 0.72, 0.62, a);
+      }
+    `;
+
+    const photoParticleSystems = photoMeshes.map((mesh, i) => {
+      const COUNT = 300;
+      const sp  = new Float32Array(COUNT*3);
+      const vel = new Float32Array(COUNT*3);
+      const ph  = new Float32Array(COUNT);
+      const dl  = new Float32Array(COUNT);
+      const W=3.4, H=2.4;
+      const angle=START+STEP*i;
+      const cx=Math.sin(angle)*RADIUS, cy=heights[i], cz=Math.cos(angle)*RADIUS;
+      for(let j=0;j<COUNT;j++){
+        sp[j*3+0]=cx+(Math.random()-0.5)*W;
+        sp[j*3+1]=cy+(Math.random()-0.5)*H;
+        sp[j*3+2]=cz+(Math.random()-0.5)*0.1;
+        vel[j*3+0]=(Math.random()-0.5)*1.5;
+        vel[j*3+1]=Math.random()*1.0+0.3;
+        vel[j*3+2]=(Math.random()-0.5)*1.0;
+        ph[j]=Math.random()*Math.PI*2;
+        dl[j]=offsets[i]+Math.random()*0.25;
+      }
+      const geo=new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(sp.slice(),3));
+      geo.setAttribute('aSeedPos', new THREE.BufferAttribute(sp,3));
+      geo.setAttribute('aVelocity',new THREE.BufferAttribute(vel,3));
+      geo.setAttribute('aPhase',   new THREE.BufferAttribute(ph,1));
+      geo.setAttribute('aDelay',   new THREE.BufferAttribute(dl,1));
+      const mat=new THREE.ShaderMaterial({
+        uniforms:{uDissolve:{value:0},uTime:{value:0}},
+        vertexShader:photoParticleVert, fragmentShader:photoParticleFrag,
+        transparent:true, depthWrite:false,
+      });
+      const pts=new THREE.Points(geo,mat);
+      scene.add(pts);
+      return { pts, mat, offset:offsets[i] };
+    });
+
+    // ── Bible verse letter-scatter system ────────────────────────────────────
+    // Each verse is laid out letter-by-letter as camera-billboard quads.
+    // On dissolve, individual letters fly outward and fade — no whole-plane fade.
+
+    const verses = [
+      { ref: 'Ephesians 5:19',  text: 'Speaking to one another with psalms, hymns, and songs from the Spirit. Sing and make music from your heart to the Lord.' },
+      { ref: 'Psalm 150:6',     text: 'Let everything that has breath praise the Lord. Praise the Lord.' },
+      { ref: 'Psalm 95:1',      text: 'Come, let us sing for joy to the Lord; let us shout aloud to the Rock of our salvation.' },
+      { ref: 'Psalm 100:1-2',   text: 'Shout for joy to the Lord, all the earth. Worship the Lord with gladness; come before him with joyful songs.' },
+      { ref: 'Colossians 3:16', text: 'Let the message of Christ dwell among you richly as you teach and admonish one another with all wisdom through psalms, hymns, and songs from the Spirit.' },
+      { ref: 'Psalm 34:1',      text: 'I will extol the Lord at all times; his praise will always be on my lips.' },
+      { ref: 'Hebrews 13:15',   text: 'Through Jesus, let us continually offer to God a sacrifice of praise — the fruit of lips that openly profess his name.' },
+      { ref: 'Revelation 5:12', text: 'Worthy is the Lamb, who was slain, to receive power and wealth and wisdom and strength and honor and glory and praise!' },
+      { ref: 'Psalm 47:1',      text: 'Clap your hands, all you nations; shout to God with cries of joy.' },
+      { ref: 'Zephaniah 3:17',  text: 'The Lord your God is with you, the Mighty Warrior who saves. He will rejoice over you with singing.' },
+    ];
+
+    // ── Single character atlas — one font, one size, consistent weight ──────────
+    // Wider cells so serifs/descenders don't clip; font drawn left-aligned with small margin
+    const ATLAS_COLS=16, ATLAS_ROWS=7, ATLAS_CW=52, ATLAS_CH=64;
+    const PRINTABLE=' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~—';
+    const FONT_PX = Math.floor(ATLAS_CH*0.70);
+    const atlasEl=document.createElement('canvas');
+    atlasEl.width=ATLAS_COLS*ATLAS_CW; atlasEl.height=ATLAS_ROWS*ATLAS_CH;
+    const aCtx=atlasEl.getContext('2d');
+    aCtx.clearRect(0,0,atlasEl.width,atlasEl.height);
+    aCtx.font=`bold ${FONT_PX}px Georgia,serif`;
+    aCtx.textAlign='center'; aCtx.textBaseline='middle';
+    const charMap={}, charPW={};
+    PRINTABLE.split('').forEach((c,i)=>{
+      charMap[c]=i;
+      charPW[c]=aCtx.measureText(c).width;
+      const col=i%ATLAS_COLS, row=Math.floor(i/ATLAS_COLS);
+      aCtx.fillStyle='rgba(255,255,255,0.95)';
+      aCtx.fillText(c, col*ATLAS_CW+ATLAS_CW/2, row*ATLAS_CH+ATLAS_CH/2);
+    });
+    const atlasTex=new THREE.CanvasTexture(atlasEl);
+
+    // charUV returns UVs cropped tightly to the measured glyph width (centered in cell)
+    // so narrow chars ('i') and wide chars ('W') both render undistorted
+    function charUV(c){
+      const i=charMap[c]??charMap[' ']??0;
+      const col=i%ATLAS_COLS, row=Math.floor(i/ATLAS_COLS);
+      const pw=charPW[c]??ATLAS_CW;
+      const pad=Math.max(0,(ATLAS_CW-pw)*0.5);
+      const aw=ATLAS_COLS*ATLAS_CW, ah=ATLAS_ROWS*ATLAS_CH;
+      const u0=(col*ATLAS_CW+pad)/aw,  u1=((col+1)*ATLAS_CW-pad)/aw;
+      const v0=1-(row+1)/ATLAS_ROWS,   v1=1-row/ATLAS_ROWS;
+      return [u0,v0,u1,v1];
+    }
+
+    // Proportional widths — one measurement pass, one scale
+    const CH=0.22, LH=0.30;       // cap height and line height (world units)
+    const GAP=0.006;               // letter-spacing
+    const MAX_LINE_W=3.2;
+
+    const WPX = CH / FONT_PX;
+    const charW={};
+    PRINTABLE.split('').forEach(c=>{ charW[c]=charPW[c]*WPX; });
+
+    // Helpers — all using the single charW map
+    function strW(str){ let w=0; for(const c of str) w+=(charW[c]??CH)+GAP; return w-GAP; }
+    function wrap(text){
+      const words=text.split(' '), lines=[];
+      let line='';
+      for(const w of words){
+        const test=line?line+' '+w:w;
+        if(strW(test)>MAX_LINE_W&&line){ lines.push(line); line=w; }
+        else line=test;
+      }
+      if(line) lines.push(line);
+      return lines;
+    }
+
+    const V_RADIUS=6.5;
+    const verseAH=[
+      [Math.PI*0.0,  4.2], [Math.PI*0.2, -3.8],
+      [Math.PI*0.4,  4.6], [Math.PI*0.6, -4.2],
+      [Math.PI*0.8,  3.9], [Math.PI*1.0, -4.6],
+      [Math.PI*1.2,  4.4], [Math.PI*1.4, -3.6],
+      [Math.PI*1.6,  3.7], [Math.PI*1.8, -4.4],
+    ];
+
+    // Single geometry — per-vertex color (r,g,b) distinguishes ref (gold) from body (white)
+    const posArr=[],uvArr=[],colArr=[],idxArr=[];
+    const seedArr=[],velArr=[],phArr=[],dlArr=[],cornerArr=[];
+    let letterVtx=0;
+
+    function addQuad(ax,ay,az, vx,vy, cw, c, delay, speed, r,g,b){
+      if(!(c in charMap)) return;
+      const [u0,v0,u1,v1]=charUV(c);
+      const sx=(Math.random()-0.5)*2.6, sy=0.5+Math.random()*2.0, sz=(Math.random()-0.5)*2.2;
+      const ph=Math.random()*Math.PI*2;
+      const base=letterVtx;
+      [[vx-cw/2,vy-CH/2,u0,v0],[vx+cw/2,vy-CH/2,u1,v0],
+       [vx+cw/2,vy+CH/2,u1,v1],[vx-cw/2,vy+CH/2,u0,v1]].forEach(([kx,ky,u,v])=>{
+        posArr.push(ax,ay,az); uvArr.push(u,v);
+        colArr.push(r,g,b);
+        cornerArr.push(kx,ky);
+        seedArr.push(ax,ay,az);
+        velArr.push(sx*speed,sy*speed,sz*speed);
+        phArr.push(ph); dlArr.push(delay);
+        letterVtx++;
+      });
+      idxArr.push(base,base+1,base+2, base,base+2,base+3);
+    }
+
+    verses.forEach((verse,vi)=>{
+      const [angle,anchorY]=verseAH[vi];
+      const ax=Math.sin(angle)*V_RADIUS, az=Math.cos(angle)*V_RADIUS;
+      const dBase=0.02+vi*0.022;
+
+      // Reference line — gold, floated above body with a clear gap
+      const refY = LH * 1.1;
+      const rW=strW(verse.ref);
+      let rCursor=-rW/2;
+      verse.ref.split('').forEach((c,ci)=>{
+        const cw=charW[c]??CH;
+        addQuad(ax,anchorY,az, rCursor+cw/2, refY, cw, c,
+          dBase+ci*0.005+Math.random()*0.02, 3.0, 0.88,0.74,0.42);
+        rCursor+=cw+GAP;
+      });
+
+      // Verse body — white, word-wrapped, starts below the ref gap
+      const bodyStartY = refY - LH * 1.6;
+      const lines=wrap(verse.text);
+      lines.forEach((ln,li)=>{
+        const lw=strW(ln);
+        let cursor=-lw/2;
+        ln.split('').forEach((c,ci)=>{
+          const cw=charW[c]??CH;
+          addQuad(ax,anchorY,az, cursor+cw/2, bodyStartY - li*LH, cw, c,
+            dBase+(li*12+ci)*0.0022+Math.random()*0.015, 2.4, 0.92,0.90,0.95);
+          cursor+=cw+GAP;
+        });
+      });
+    });
+
+    const letterVert=`
+      attribute vec3  aSeedPos;
+      attribute vec3  aVelocity;
+      attribute float aPhase;
+      attribute float aDelay;
+      attribute vec2  aCorner;
+      attribute vec3  aColor;
+      uniform float uDissolve;
+      uniform float uTime;
+      uniform float uOpacity;
+      varying vec2  vUv;
+      varying float vAlpha;
+      varying vec3  vColor;
+      void main(){
+        vUv=uv; vColor=aColor;
+        float dep=clamp((uDissolve-aDelay)/max(0.001,1.0-aDelay),0.0,1.0);
+        vec3 pos=aSeedPos;
+        if(dep>0.0){
+          float t=uTime*0.5;
+          pos+=aVelocity*dep*3.8;
+          pos.y+=dep*dep*4.5;
+          pos.x+=sin(aPhase+t*1.3)*dep*1.0;
+          pos.z+=cos(aPhase*1.4+t*1.0)*dep*0.8;
+        }
+        vec4 mv=modelViewMatrix*vec4(pos,1.0);
+        mv.x+=aCorner.x; mv.y+=aCorner.y;
+        gl_Position=projectionMatrix*mv;
+        vAlpha=smoothstep(1.0,0.2,dep)*uOpacity;
+      }
+    `;
+    const letterFrag=`
+      uniform sampler2D uAtlas;
+      varying vec2  vUv;
+      varying float vAlpha;
+      varying vec3  vColor;
+      void main(){
+        float a=texture2D(uAtlas,vUv).a*vAlpha;
+        if(a<0.012) discard;
+        gl_FragColor=vec4(vColor,a);
+      }
+    `;
+
+    const letterGeo=new THREE.BufferGeometry();
+    letterGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(posArr),3));
+    letterGeo.setAttribute('uv',       new THREE.BufferAttribute(new Float32Array(uvArr),2));
+    letterGeo.setAttribute('aColor',   new THREE.BufferAttribute(new Float32Array(colArr),3));
+    letterGeo.setAttribute('aSeedPos', new THREE.BufferAttribute(new Float32Array(seedArr),3));
+    letterGeo.setAttribute('aVelocity',new THREE.BufferAttribute(new Float32Array(velArr),3));
+    letterGeo.setAttribute('aPhase',   new THREE.BufferAttribute(new Float32Array(phArr),1));
+    letterGeo.setAttribute('aDelay',   new THREE.BufferAttribute(new Float32Array(dlArr),1));
+    letterGeo.setAttribute('aCorner',  new THREE.BufferAttribute(new Float32Array(cornerArr),2));
+    letterGeo.setIndex(idxArr);
+    const letterMat=new THREE.ShaderMaterial({
+      uniforms:{uDissolve:{value:0},uTime:{value:0},uOpacity:{value:0},uAtlas:{value:atlasTex}},
+      vertexShader:letterVert, fragmentShader:letterFrag,
+      transparent:true, depthWrite:false, side:THREE.DoubleSide,
+    });
+    const letterMesh=new THREE.Mesh(letterGeo,letterMat);
+    scene.add(letterMesh);
+
+    setTimeout(()=>{
+      const fadeIn=()=>{
+        letterMat.uniforms.uOpacity.value=Math.min(letterMat.uniforms.uOpacity.value+0.004,0.88);
+        if(letterMat.uniforms.uOpacity.value<0.88) requestAnimationFrame(fadeIn);
+      };
+      fadeIn();
+    },600);
+
+    // ── Dissolve state ────────────────────────────────────────────────────────
+    let dissolveTarget=0, dissolveCurrent=0;
+    window.addEventListener('wheel',(e)=>{
+      dissolveTarget=Math.max(0,Math.min(1,dissolveTarget+e.deltaY*0.0008));
+    },{passive:true});
+
+    // ── Animate ───────────────────────────────────────────────────────────────
+    const clock=new THREE.Clock();
+    let logoRotY=0, lastT=0;
+
+    function animate(){
+      requestAnimationFrame(animate);
+      const t=clock.getElapsedTime();
+      dissolveCurrent+=(dissolveTarget-dissolveCurrent)*0.04;
+      const d=dissolveCurrent;
+
+      // Logo mesh fades quickly; particles take over
+      const meshOpacity = Math.max(0, 1.0 - d * 5.0); // gone by dissolve=0.2
+      logoMaterials.forEach(m=>{ m.opacity=meshOpacity; });
+      logoParticleMat.uniforms.uDissolve.value=d;
+      logoParticleMat.uniforms.uTime.value=t;
+      group.position.y=d*0.4;
+
+      bgMat.opacity=0.5*(1-d);
+
+      // Photos + their particles
+      photoMeshes.forEach((mesh,i)=>{
+        const off=mesh.userData.offset;
+        const ld=Math.max(0,Math.min(1,(d-off)/(1-off)));
+        mesh.material.uniforms.opacity.value=Math.max(0,(1-ld*5)*0.78);
+        mesh.lookAt(camera.position);
+        mesh.position.y=mesh.userData.baseY+Math.sin(t*0.4+mesh.userData.phase)*0.18;
+      });
+      photoParticleSystems.forEach(({mat})=>{
+        mat.uniforms.uDissolve.value=d;
+        mat.uniforms.uTime.value=t;
+      });
+
+      // Letter scatter — dissolve + time drive both meshes
+      letterMesh.material.uniforms.uDissolve.value=d;
+      letterMesh.material.uniforms.uTime.value=t;
+
+      logoRotY += (t - lastT) * 0.35;
+      lastT = t;
+      group.rotation.y = logoRotY;
+      purpleLight.intensity=18+Math.sin(t*1.1)*4;
+      blueLight.intensity  =14+Math.cos(t*0.8)*3;
+      controls.update();
+      composer.render();
+    }
+    animate();
+
+    window.addEventListener('resize',()=>{
+      camera.aspect=innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth,innerHeight);
+      composer.setSize(innerWidth,innerHeight);
+    });
+  </script>
+</body>
+</html>
