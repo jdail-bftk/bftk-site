@@ -1625,8 +1625,8 @@
   <p class="section-lead reveal d2" style="max-width:430px;margin:.8rem auto 0;text-align:center;">
     Be the first to hear about events, artist announcements, and subscriber-only opportunities.
   </p>
-  <form class="nl-form reveal d3" onsubmit="handleSub(event)">
-    <input type="email" class="nl-input" placeholder="Your email address" required />
+  <form class="nl-form reveal d3" onsubmit="handleSub(event)" action="http://eepurl.com/FgjhgJCygL" target="_blank">
+    <input type="email" name="EMAIL" class="nl-input" placeholder="Your email address" required />
     <button type="submit" class="nl-btn">Subscribe</button>
   </form>
   <p class="nl-note">No spam, ever. Unsubscribe any time.</p>
@@ -2277,12 +2277,9 @@
 
   // ── NEWSLETTER ──
   function handleSub(e) {
-
-    e.preventDefault();
     const btn = e.target.querySelector('button');
     btn.textContent = 'Subscribed ✓';
     btn.style.background = 'linear-gradient(135deg,#1e6b3a,#127a45)';
-    e.target.querySelector('input').value = '';
     setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; }, 3500);
   }
 </script>
