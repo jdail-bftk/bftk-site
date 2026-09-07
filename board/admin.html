@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BFTK Board Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0D0C1A; --surface: #13122A; --cream: #F5EDD8;
+      --cream-dim: rgba(245,237,216,0.55); --red: #e53e3e;
+      --grad: linear-gradient(135deg, #2B4DD4, #8B2FC9);
+    }
+    body { background: var(--bg); color: var(--cream); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+    /* ── LOGIN ── */
+    #login-screen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 2rem;
+    }
+    .login-card {
+      background: var(--surface); border: 1px solid rgba(245,237,216,0.08);
+      border-radius: 16px; padding: 2.5rem 2rem; width: 100%; max-width: 360px;
+      text-align: center; display: flex; flex-direction: column; gap: 1.2rem;
+    }
+    .login-eyebrow {
+      font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.28em;
+      color: var(--cream-dim); text-transform: uppercase;
+    }
+    .login-title { font-family: 'Cinzel', serif; font-size: 1.3rem; font-weight: 700; }
+    .login-card input[type="password"] {
+      width: 100%; padding: 0.75rem 1rem; border-radius: 10px;
+      border: 1px solid rgba(245,237,216,0.15); background: rgba(255,255,255,0.04);
+      color: var(--cream); font-size: 1rem; outline: none; text-align: center;
+      letter-spacing: 0.1em;
+    }
+    .login-card input[type="password"]:focus { border-color: rgba(139,47,201,0.5); }
+    .login-btn {
+      font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.14em;
+      padding: 0.75rem; border-radius: 100px; border: none;
+      background: var(--grad); color: #fff; cursor: pointer; transition: opacity 0.2s;
+    }
+    .login-btn:hover { opacity: 0.85; }
+    .login-err { font-size: 0.8rem; color: #fca5a5; min-height: 1.2em; }
+
+    /* ── ADMIN ── */
+    #admin-screen { display: none; padding: 2.5rem 1.5rem; max-width: 860px; margin: 0 auto; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+    .admin-title { font-family: 'Cinzel', serif; font-size: 1.3rem; font-weight: 700; }
+    .admin-sub { font-size: 0.78rem; color: var(--cream-dim); margin-top: 0.25rem; }
+    .logout-btn {
+      font-size: 0.7rem; padding: 0.45rem 1.1rem; border-radius: 100px;
+      border: 1px solid rgba(245,237,216,0.2); background: transparent;
+      color: var(--cream-dim); cursor: pointer; font-family: 'Inter', sans-serif;
+    }
+    .logout-btn:hover { border-color: var(--cream-dim); color: var(--cream); }
+
+    .filter-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .ftab {
+      font-size: 0.72rem; padding: 0.4rem 1rem; border-radius: 100px;
+      border: 1px solid rgba(245,237,216,0.15); background: transparent;
+      color: var(--cream-dim); cursor: pointer; font-family: 'Inter', sans-serif;
+    }
+    .ftab.active { background: var(--grad); border-color: transparent; color: #fff; }
+
+    .post-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .post-row {
+      background: var(--surface); border: 1px solid rgba(245,237,216,0.07);
+      border-radius: 12px; padding: 1rem 1.1rem;
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+    }
+    .post-row.deleted { opacity: 0.35; pointer-events: none; }
+    .post-meta { font-size: 0.68rem; color: var(--cream-dim); margin-bottom: 0.35rem; }
+    .post-text { font-size: 0.9rem; line-height: 1.55; word-break: break-word; }
+    .post-likes { font-size: 0.72rem; color: var(--cream-dim); margin-top: 0.4rem; }
+    .delete-btn {
+      flex-shrink: 0; font-size: 0.68rem; padding: 0.4rem 0.9rem;
+      border-radius: 100px; border: 1px solid rgba(229,62,62,0.4);
+      background: transparent; color: #fca5a5; cursor: pointer;
+      font-family: 'Inter', sans-serif; transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .delete-btn:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+    .empty-state { text-align: center; padding: 3rem; color: var(--cream-dim); font-size: 0.88rem; }
+    .badge { display: inline-block; font-size: 0.58rem; letter-spacing: 0.1em; padding: 0.15rem 0.5rem; border-radius: 100px; text-transform: uppercase; font-weight: 600; margin-right: 0.4rem; }
+    .badge-story { background: #2B4DD4; color: #fff; }
+    .badge-idea  { background: #8B2FC9; color: #fff; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-eyebrow">BFTK · Board Admin</div>
+    <h1 class="login-title">Admin Access</h1>
+    <input type="password" id="pw-input" placeholder="Password" autocomplete="current-password" />
+    <button class="login-btn" id="login-btn">Unlock →</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin-screen">
+  <div class="admin-header">
+    <div>
+      <div class="admin-title">Board Admin</div>
+      <div class="admin-sub" id="post-count">Loading posts…</div>
+    </div>
+    <button class="logout-btn" id="logout-btn">Lock &amp; Exit</button>
+  </div>
+  <div class="filter-tabs">
+    <button class="ftab active" data-filter="all">All</button>
+    <button class="ftab" data-filter="story">Experiences</button>
+    <button class="ftab" data-filter="idea">Ideas</button>
+  </div>
+  <div class="post-list" id="post-list"></div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+const PW_HASH = '939259f976e7ea24ab1dbda459f7e4be6284a112d287065d3023aadd8a26e668';
+
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyDJBcWSucVB9GmKgNoCbDI6sJEUCcazqio",
+  authDomain:        "bftk-message-board.firebaseapp.com",
+  databaseURL:       "https://bftk-message-board-default-rtdb.firebaseio.com",
+  projectId:         "bftk-message-board",
+  storageBucket:     "bftk-message-board.firebasestorage.app",
+  messagingSenderId: "33040031599",
+  appId:             "1:33040031599:web:524593ddfdd542b172529a"
+};
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function ago(ts) {
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
+let db = null;
+let allPosts = [];
+let activeFilter = 'all';
+
+// ── LOGIN ──
+document.getElementById('login-btn').addEventListener('click', tryLogin);
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key==='Enter') tryLogin(); });
+
+async function tryLogin() {
+  const val = document.getElementById('pw-input').value;
+  const hash = await sha256(val);
+  if (hash === PW_HASH) {
+    sessionStorage.setItem('bftk_admin', '1');
+    showAdmin();
+  } else {
+    document.getElementById('login-err').textContent = 'Incorrect password.';
+    document.getElementById('pw-input').value = '';
+  }
+}
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  sessionStorage.removeItem('bftk_admin');
+  document.getElementById('admin-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+});
+
+// ── FILTER ──
+document.querySelectorAll('.ftab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.ftab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    activeFilter = t.dataset.filter;
+    renderPosts();
+  });
+});
+
+// ── ADMIN ──
+function showAdmin() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-screen').style.display = 'block';
+  if (!db) {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+  }
+  db.ref('posts').orderByChild('ts').on('value', snap => {
+    allPosts = [];
+    snap.forEach(c => allPosts.push({id: c.key, ...c.val()}));
+    allPosts.reverse();
+    renderPosts();
+  });
+}
+
+function renderPosts() {
+  const list = document.getElementById('post-list');
+  const filtered = activeFilter === 'all' ? allPosts : allPosts.filter(p => p.type === activeFilter);
+  document.getElementById('post-count').textContent = `${allPosts.length} total post${allPosts.length!==1?'s':''}`;
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state">No posts yet.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  filtered.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'post-row';
+    row.id = `row-${p.id}`;
+    row.innerHTML = `
+      <div style="flex:1;min-width:0;">
+        <div class="post-meta">
+          <span class="badge badge-${p.type}">${p.type==='idea'?'Idea':'Story'}</span>
+          ${ago(p.ts)}
+        </div>
+        <div class="post-text">${esc(p.text)}</div>
+        <div class="post-likes">❤️ ${p.likes||0} like${(p.likes||0)!==1?'s':''}</div>
+      </div>
+      <button class="delete-btn" data-id="${p.id}">Delete</button>`;
+    row.querySelector('.delete-btn').addEventListener('click', () => deletePost(p.id));
+    list.appendChild(row);
+  });
+}
+
+function deletePost(id) {
+  if (!db) return;
+  const row = document.getElementById(`row-${id}`);
+  if (row) row.classList.add('deleted');
+  db.ref(`posts/${id}`).remove().catch(() => {
+    if (row) row.classList.remove('deleted');
+  });
+}
+
+// auto-unlock if already authenticated this session
+if (sessionStorage.getItem('bftk_admin')) showAdmin();
+</script>
+</body>
+</html>
