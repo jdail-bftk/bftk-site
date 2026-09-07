@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BFTK Community Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0D0C1A;
+      --surface: #13122A;
+      --cream: #F5EDD8;
+      --cream-dim: rgba(245,237,216,0.55);
+      --purple: #8B2FC9;
+      --blue: #2B4DD4;
+      --grad: linear-gradient(135deg, #2B4DD4, #8B2FC9);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--cream);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding-bottom: 4rem;
+    }
+
+    /* ── HEADER ── */
+    .board-header {
+      text-align: center;
+      padding: 2.5rem 1.5rem 0;
+    }
+    .board-eyebrow {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.28em;
+      color: var(--cream-dim);
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+    .board-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.3rem, 4vw, 2rem);
+      font-weight: 700;
+      color: var(--cream);
+      line-height: 1.2;
+      margin-bottom: 0.6rem;
+    }
+    .board-title .grad {
+      background: linear-gradient(135deg, #7BA7FF, #C084FC);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .board-sub {
+      font-size: 0.88rem;
+      color: var(--cream-dim);
+      max-width: 440px;
+      margin: 0 auto;
+      line-height: 1.65;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 1.4rem 1.5rem 0;
+      flex-wrap: wrap;
+    }
+    .tab {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      padding: 0.55rem 1.3rem;
+      border-radius: 100px;
+      border: 1px solid rgba(245,237,216,0.15);
+      background: transparent;
+      color: var(--cream-dim);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      background: var(--grad);
+      border-color: transparent;
+      color: #fff;
+    }
+    .tab:hover:not(.active) { border-color: rgba(245,237,216,0.3); color: var(--cream); }
+
+    /* ── SUBMIT FORM ── */
+    .submit-wrap {
+      max-width: 580px;
+      margin: 1.4rem auto 0;
+      padding: 0 1.5rem;
+    }
+    .submit-card {
+      background: var(--surface);
+      border: 1px solid rgba(245,237,216,0.08);
+      border-radius: 14px;
+      padding: 1.1rem 1.2rem 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+    .submit-card textarea {
+      background: transparent;
+      border: none;
+      color: var(--cream);
+      font-family: 'Caveat', cursive;
+      font-size: 1.1rem;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+      width: 100%;
+      min-height: 72px;
+    }
+    .submit-card textarea::placeholder { color: rgba(245,237,216,0.25); }
+    .submit-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .char-count { font-size: 0.7rem; color: rgba(245,237,216,0.28); }
+    .submit-btn {
+      font-family: 'Cinzel', serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      padding: 0.6rem 1.4rem;
+      border-radius: 100px;
+      border: none;
+      background: var(--grad);
+      color: #fff;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .submit-btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+    .submit-err {
+      font-size: 0.78rem;
+      color: #fca5a5;
+      margin-top: 0.5rem;
+      padding: 0 0.2rem;
+      display: none;
+      min-height: 1.2em;
+    }
+
+    /* ── CARDS ── */
+    .cards-area {
+      max-width: 1060px;
+      margin: 2rem auto 0;
+      padding: 0 1.5rem;
+      columns: 3;
+      column-gap: 1.1rem;
+    }
+    @media (max-width: 780px) { .cards-area { columns: 2; } }
+    @media (max-width: 460px) { .cards-area { columns: 1; } }
+
+    .card {
+      break-inside: avoid;
+      margin-bottom: 1.1rem;
+      border-radius: 3px;
+      padding: 1.15rem 1.1rem 0.9rem;
+      position: relative;
+      box-shadow: 0 6px 22px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      animation: card-in 0.35s ease both;
+    }
+    @keyframes card-in {
+      from { opacity: 0; transform: scale(0.94) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .card-text {
+      font-family: 'Caveat', cursive;
+      font-size: 1.12rem;
+      line-height: 1.52;
+      color: #2C1A10;
+      word-break: break-word;
+    }
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-time {
+      font-size: 0.66rem;
+      color: rgba(44,26,16,0.42);
+      font-family: 'Inter', sans-serif;
+    }
+    .like-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.28rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.76rem;
+      color: rgba(44,26,16,0.48);
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      padding: 0.18rem 0.45rem;
+      border-radius: 100px;
+      transition: background 0.15s, color 0.15s;
+      line-height: 1;
+    }
+    .like-btn:hover { background: rgba(44,26,16,0.08); }
+    .like-btn.liked { color: #c0392b; }
+    .heart { font-size: 0.85rem; transition: transform 0.15s; display: inline-block; }
+    .like-btn:hover .heart { transform: scale(1.25); }
+
+    .card-badge {
+      position: absolute;
+      top: -8px;
+      right: 12px;
+      font-size: 0.55rem;
+      letter-spacing: 0.14em;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      padding: 0.18rem 0.55rem;
+      border-radius: 100px;
+      text-transform: uppercase;
+    }
+    .badge-story { background: #2B4DD4; color: #fff; }
+    .badge-idea  { background: #8B2FC9; color: #fff; }
+
+    /* ── STATES ── */
+    .board-state {
+      text-align: center;
+      padding: 3.5rem 1.5rem;
+      color: var(--cream-dim);
+    }
+    .board-state-icon { font-size: 2.2rem; margin-bottom: 1rem; }
+    .board-state h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      color: var(--cream);
+      margin-bottom: 0.45rem;
+    }
+    .board-state p { font-size: 0.82rem; line-height: 1.6; }
+
+    .config-notice {
+      max-width: 520px;
+      margin: 2rem auto;
+      padding: 1.1rem 1.4rem;
+      background: rgba(139,47,201,0.1);
+      border: 1px solid rgba(139,47,201,0.25);
+      border-radius: 12px;
+      color: var(--cream-dim);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      text-align: center;
+    }
+    .config-notice strong { color: var(--cream); }
+  </style>
+</head>
+<body>
+
+<div class="board-header">
+  <div class="board-eyebrow">BFTK Fest 2026 · Clinton, Iowa</div>
+  <h1 class="board-title">Share Your <span class="grad">Story</span></h1>
+  <p class="board-sub">Drop a note for the community — a memory from the weekend, or an idea for what's next.</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-type="story">✨ Your Experience</button>
+  <button class="tab" data-type="idea">💡 What's Next for BFTK?</button>
+</div>
+
+<div class="submit-wrap">
+  <div class="submit-card">
+    <textarea id="post-input" maxlength="280" placeholder="What was your BFTK moment?"></textarea>
+    <div class="submit-row">
+      <span class="char-count"><span id="char-left">280</span> left</span>
+      <button class="submit-btn" id="submit-btn">Post It →</button>
+    </div>
+  </div>
+  <div class="submit-err" id="submit-err"></div>
+</div>
+
+<div id="board-body"></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// ── FIREBASE CONFIG — paste your project config here ──
+const FIREBASE_CONFIG = {
+  apiKey:            "PASTE_API_KEY",
+  authDomain:        "PASTE_PROJECT_ID.firebaseapp.com",
+  databaseURL:       "https://PASTE_PROJECT_ID-default-rtdb.firebaseio.com",
+  projectId:         "PASTE_PROJECT_ID",
+  storageBucket:     "PASTE_PROJECT_ID.appspot.com",
+  messagingSenderId: "PASTE_SENDER_ID",
+  appId:             "PASTE_APP_ID"
+};
+
+// ── PROFANITY FILTER ──
+const BAD = [
+  'fuck','shit','bitch','cunt','cock','pussy','whore','slut','faggot',
+  'nigger','nigga','asshole','motherfucker','bastard','dickhead','prick',
+  'fuk','fck','sh1t','b1tch','a55','@ss'
+];
+function clean(text) {
+  const n = text.toLowerCase()
+    .replace(/0/g,'o').replace(/1/g,'i').replace(/3/g,'e')
+    .replace(/@/g,'a').replace(/\$/g,'s').replace(/!/g,'i')
+    .replace(/[^a-z\s]/g,'');
+  return BAD.some(w => {
+    try { return new RegExp(`\\b${w}\\b`).test(n); }
+    catch { return n.includes(w); }
+  });
+}
+
+// ── LIKED POSTS ──
+function getLiked() { try { return JSON.parse(localStorage.getItem('bftk_liked')||'{}'); } catch { return {}; } }
+function saveLiked(o) { try { localStorage.setItem('bftk_liked', JSON.stringify(o)); } catch {} }
+
+// ── CARD PALETTE & ROTATION ──
+const COLORS = ['#FFF9EE','#FFFDF4','#F7F4FF','#F4FBF0','#FFF4F4','#FFFCE8'];
+const ROTS   = [-3.2,-1.8,-0.9,0,0.9,1.8,3.2,-2.4,2.4,-1.2,1.2,-3.8,3.8];
+const cardColor = id => COLORS[id.charCodeAt(0) % COLORS.length];
+const cardRot   = id => ROTS[(id.charCodeAt(1)||0) % ROTS.length];
+
+// ── TIME ──
+function ago(ts) {
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s < 60)    return 'just now';
+  if (s < 3600)  return `${Math.floor(s/60)}m ago`;
+  if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+  return `${Math.floor(s/86400)}d ago`;
+}
+
+// ── ESCAPE ──
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// ── RENDER CARD ──
+function makeCard(id, d) {
+  const liked = getLiked();
+  const isLiked = !!liked[id];
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.id = `card-${id}`;
+  el.style.cssText = `background:${cardColor(id)};transform:rotate(${cardRot(id)}deg)`;
+  el.innerHTML = `
+    <span class="card-badge ${d.type==='idea'?'badge-idea':'badge-story'}">${d.type==='idea'?'Idea':'Story'}</span>
+    <p class="card-text">${esc(d.text)}</p>
+    <div class="card-footer">
+      <span class="card-time">${ago(d.ts)}</span>
+      <button class="like-btn${isLiked?' liked':''}" data-id="${id}">
+        <span class="heart">${isLiked?'❤️':'🤍'}</span>
+        <span class="lc">${d.likes||0}</span>
+      </button>
+    </div>`;
+  el.querySelector('.like-btn').addEventListener('click', ()=>handleLike(id));
+  return el;
+}
+
+// ── LIKE ──
+function handleLike(id) {
+  if (!db) return;
+  const liked = getLiked();
+  if (liked[id]) return;
+  liked[id] = true;
+  saveLiked(liked);
+  const card = document.getElementById(`card-${id}`);
+  if (card) {
+    const btn = card.querySelector('.like-btn');
+    btn.classList.add('liked');
+    btn.querySelector('.heart').textContent = '❤️';
+    const lc = btn.querySelector('.lc');
+    lc.textContent = (parseInt(lc.textContent)||0)+1;
+  }
+  db.ref(`posts/${id}/likes`).transaction(v => (v||0)+1);
+}
+
+// ── STATE ──
+let activeType = 'story';
+let db = null;
+const body = document.getElementById('board-body');
+
+// ── CONFIGURED? ──
+const configured = !FIREBASE_CONFIG.apiKey.startsWith('PASTE');
+
+if (!configured) {
+  body.innerHTML = `<div class="config-notice"><strong>Board coming soon.</strong><br/>Firebase connection is being set up — check back shortly.</div>`;
+} else {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    startBoard();
+  } catch(e) {
+    body.innerHTML = `<div class="board-state"><div class="board-state-icon">⚠️</div><h3>Can't connect right now</h3><p>Try refreshing in a moment.</p></div>`;
+  }
+}
+
+// ── BOARD ──
+function startBoard() {
+  const area = document.createElement('div');
+  area.className = 'cards-area';
+  area.id = 'cards-area';
+  const loading = document.createElement('div');
+  loading.className = 'board-state';
+  loading.id = 'loading';
+  loading.innerHTML = `<div class="board-state-icon">📌</div><p>Loading posts...</p>`;
+  body.appendChild(loading);
+  body.appendChild(area);
+
+  db.ref('posts').orderByChild('ts').limitToLast(150).on('value', snap => {
+    document.getElementById('loading')?.remove();
+    area.querySelectorAll('.card').forEach(c => c.remove());
+
+    if (!snap.exists()) {
+      if (!area.querySelector('.board-state')) {
+        const empty = document.createElement('div');
+        empty.className = 'board-state';
+        empty.innerHTML = `<div class="board-state-icon">📌</div><h3>Be the first to share</h3><p>No posts yet — drop a note and kick things off.</p>`;
+        area.appendChild(empty);
+      }
+      return;
+    }
+
+    area.querySelector('.board-state')?.remove();
+    const posts = [];
+    snap.forEach(c => posts.push({id:c.key,...c.val()}));
+    posts.reverse().forEach(p => area.appendChild(makeCard(p.id,p)));
+  }, () => {
+    body.innerHTML = `<div class="board-state"><p>Couldn't load posts. Try refreshing.</p></div>`;
+  });
+
+  // live like updates
+  db.ref('posts').on('child_changed', snap => {
+    const card = document.getElementById(`card-${snap.key}`);
+    if (!card) return;
+    const lc = card.querySelector('.lc');
+    if (lc) lc.textContent = snap.val().likes || 0;
+  });
+}
+
+// ── TABS ──
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    activeType = t.dataset.type;
+    document.getElementById('post-input').placeholder =
+      activeType === 'story' ? 'What was your BFTK moment?' : 'What should we do at BFTK 2027?';
+  });
+});
+
+// ── CHAR COUNT ──
+document.getElementById('post-input').addEventListener('input', function() {
+  document.getElementById('char-left').textContent = 280 - this.value.length;
+});
+
+// ── SUBMIT ──
+document.getElementById('submit-btn').addEventListener('click', submit);
+document.getElementById('post-input').addEventListener('keydown', e => {
+  if ((e.ctrlKey||e.metaKey) && e.key==='Enter') submit();
+});
+
+function submit() {
+  if (!db) return;
+  const input = document.getElementById('post-input');
+  const errEl = document.getElementById('submit-err');
+  const btn   = document.getElementById('submit-btn');
+  const text  = input.value.trim();
+
+  errEl.style.display = 'none';
+
+  if (!text || text.length < 3) {
+    errEl.textContent = 'Write a little more before posting.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (clean(text)) {
+    errEl.textContent = 'Please keep it family-friendly — this is a faith community. ✝️';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Posting...';
+
+  db.ref('posts').push({ text, type: activeType, ts: Date.now(), likes: 0 })
+    .then(() => {
+      input.value = '';
+      document.getElementById('char-left').textContent = '280';
+      btn.textContent = 'Posted ✓';
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'Post It →'; }, 2200);
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.textContent = 'Post It →';
+      errEl.textContent = 'Something went wrong. Try again.';
+      errEl.style.display = 'block';
+    });
+}
+</script>
+</body>
+</html>
